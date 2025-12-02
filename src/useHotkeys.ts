@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { isModifierKey, normalizeKey } from './utils'
+import { isModifierKey, isShiftedChar, normalizeKey } from './utils'
 
 /**
  * Hotkey definition - maps key combinations to action names
@@ -56,10 +56,16 @@ function matchesHotkey(
 ): boolean {
   const eventKey = normalizeKey(e.key)
 
+  // For shifted characters (like ?, !, @), ignore shift key mismatch
+  // since pressing these keys inherently requires shift
+  const shiftMatches = isShiftedChar(e.key)
+    ? (hotkey.shift ? e.shiftKey : true)  // If hotkey wants shift, event must have it; otherwise ignore
+    : e.shiftKey === hotkey.shift
+
   return (
     e.ctrlKey === hotkey.ctrl &&
     e.altKey === hotkey.alt &&
-    e.shiftKey === hotkey.shift &&
+    shiftMatches &&
     e.metaKey === hotkey.meta &&
     eventKey === hotkey.key
   )

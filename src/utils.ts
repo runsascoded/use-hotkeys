@@ -128,6 +128,22 @@ export function isModifierKey(key: string): boolean {
 }
 
 /**
+ * Characters that require shift to type (US keyboard layout)
+ * When matching these keys, we should ignore shiftKey mismatch
+ */
+const SHIFTED_CHARS = new Set([
+  '~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')',
+  '_', '+', '{', '}', '|', ':', '"', '<', '>', '?',
+])
+
+/**
+ * Check if a key is a shifted character (requires shift to type)
+ */
+export function isShiftedChar(key: string): boolean {
+  return SHIFTED_CHARS.has(key)
+}
+
+/**
  * Parse a combination ID back to a KeyCombination
  */
 export function parseCombinationId(id: string): KeyCombination {
