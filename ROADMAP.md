@@ -21,61 +21,42 @@ const { isRecording, startRecording, combination, display, activeKeys } = useRec
 })
 ```
 
-### Utilities
-- `formatCombination(combo)` - platform-aware display (⌘⇧K on Mac, Ctrl+Shift+K elsewhere)
-- `normalizeKey(key)` - canonical key names
-- `parseCombinationId(id)` - parse "ctrl+shift+k" back to KeyCombination
-
-## Next Up
-
-### `<ShortcutsModal>` component
-Show all registered shortcuts in a modal, triggered by `?` key:
+### `useEditableHotkeys(defaults, handlers, options?)`
+Wraps `useHotkeys` with editable keybindings and localStorage persistence:
 ```tsx
-<ShortcutsModal
-  keymap={HOTKEY_MAP}
-  descriptions={{
-    'metric:temp': 'Switch to temperature',
-    'save': 'Save changes',
-  }}
-/>
-```
-
-Features:
-- Auto-registers `?` or `shift+/` to open
-- Groups shortcuts by category (parsed from action names or explicit grouping)
-- Shows platform-appropriate key symbols
-- Keyboard-navigable, closes on Escape
-
-### `<KeybindingEditor>` component
-UI for viewing and editing keybindings:
-```tsx
-<KeybindingEditor
-  keymap={keymap}
-  descriptions={descriptions}
-  onChange={(newKeymap) => setKeymap(newKeymap)}
-/>
-```
-
-Features:
-- Lists all shortcuts with current bindings
-- Click to edit, uses `useRecordHotkey` for capture
-- Reset to defaults button
-- Conflict detection (warns if key already bound)
-
-### `useEditableHotkeys` hook
-Wraps `useHotkeys` with persistence and editing:
-```tsx
-const { keymap, setKeymap, reset } = useEditableHotkeys(
-  DEFAULT_KEYMAP,
-  handlers,
+const { keymap, setBinding, reset } = useEditableHotkeys(
+  { 't': 'setTemp', 'c': 'setCO2' },
+  { setTemp: () => setMetric('temp'), setCO2: () => setMetric('co2') },
   { storageKey: 'app-hotkeys' }
 )
 ```
 
-Features:
-- Merges user overrides with defaults
-- Persists to localStorage (or custom storage)
-- `reset()` clears overrides
+### `<ShortcutsModal>` component
+Display keyboard shortcuts in a modal (auto-opens with `?` key):
+```tsx
+<ShortcutsModal
+  keymap={HOTKEYS}
+  descriptions={{ 'metric:temp': 'Switch to temperature' }}
+  groups={{ metric: 'Metrics', time: 'Time Range' }}
+/>
+```
+
+### `<KeybindingEditor>` component
+UI for editing keybindings with conflict detection:
+```tsx
+<KeybindingEditor
+  keymap={keymap}
+  defaults={DEFAULT_KEYMAP}
+  descriptions={{ save: 'Save document' }}
+  onChange={(action, key) => setBinding(action, key)}
+  onReset={() => reset()}
+/>
+```
+
+### Utilities
+- `formatCombination(combo)` - platform-aware display (⌘⇧K on Mac, Ctrl+Shift+K elsewhere)
+- `normalizeKey(key)` - canonical key names
+- `parseCombinationId(id)` - parse "ctrl+shift+k" back to KeyCombination
 
 ## Future Ideas
 

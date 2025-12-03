@@ -87,6 +87,81 @@ Returns:
 - `display: KeyCombinationDisplay | null`
 - `activeKeys: KeyCombination | null` - keys currently held (for live UI feedback)
 
+### `useEditableHotkeys(defaults, handlers, options?)`
+
+Wraps `useHotkeys` with editable keybindings and localStorage persistence.
+
+```tsx
+import { useEditableHotkeys } from '@rdub/use-hotkeys'
+
+const { keymap, setBinding, reset, overrides } = useEditableHotkeys(
+  { 't': 'setTemp', 'c': 'setCO2' },
+  { setTemp: () => setMetric('temp'), setCO2: () => setMetric('co2') },
+  { storageKey: 'app-hotkeys' }
+)
+```
+
+- `defaults`: Default keymap
+- `handlers`: Action handlers (same as `useHotkeys`)
+- `options`:
+  - `storageKey?: string` - localStorage key for persistence (omit to disable)
+  - Plus all `useHotkeys` options
+
+Returns:
+- `keymap: HotkeyMap` - current merged keymap
+- `setBinding: (action, key) => void` - update a single binding
+- `setKeymap: (overrides) => void` - update multiple bindings
+- `reset: () => void` - clear all overrides
+- `overrides: Partial<HotkeyMap>` - user overrides only
+
+### `<ShortcutsModal>`
+
+Display keyboard shortcuts in a modal (opens with `?` by default).
+
+```tsx
+import { ShortcutsModal } from '@rdub/use-hotkeys'
+
+<ShortcutsModal
+  keymap={HOTKEYS}
+  descriptions={{ 'metric:temp': 'Switch to temperature' }}
+  groups={{ metric: 'Metrics', time: 'Time Range' }}
+/>
+```
+
+Props:
+- `keymap: HotkeyMap` - shortcuts to display
+- `descriptions?: Record<string, string>` - action descriptions
+- `groups?: Record<string, string>` - group prefix → display name
+- `isOpen?: boolean` - controlled visibility
+- `onClose?: () => void` - close callback
+- `openKey?: string` - key to open (default: `'?'`)
+- `autoRegisterOpen?: boolean` - auto-register open key (default: true)
+- `children?: (props) => ReactNode` - custom render function
+
+### `<KeybindingEditor>`
+
+UI for viewing and editing keybindings with conflict detection.
+
+```tsx
+import { KeybindingEditor } from '@rdub/use-hotkeys'
+
+<KeybindingEditor
+  keymap={keymap}
+  defaults={DEFAULT_KEYMAP}
+  descriptions={{ save: 'Save document' }}
+  onChange={(action, key) => setBinding(action, key)}
+  onReset={() => reset()}
+/>
+```
+
+Props:
+- `keymap: HotkeyMap` - current keymap
+- `defaults: HotkeyMap` - default keymap (for reset)
+- `descriptions?: Record<string, string>` - action descriptions
+- `onChange: (action, key) => void` - binding change callback
+- `onReset?: () => void` - reset callback
+- `children?: (props) => ReactNode` - custom render function
+
 ### Utilities
 
 ```tsx
@@ -124,7 +199,7 @@ Projects using `@rdub/use-hotkeys`:
 
 ## See also
 
-[ROADMAP.md](./ROADMAP.md) - planned features including `<ShortcutsModal>` and `<KeybindingEditor>` components.
+[ROADMAP.md](./ROADMAP.md) - feature overview and future plans.
 
 ## License
 
