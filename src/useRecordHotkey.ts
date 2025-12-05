@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { KeyCombination, RecordHotkeyOptions, RecordHotkeyResult } from './types'
+import type { KeyCombination, HotkeySequence, RecordHotkeyOptions, RecordHotkeyResult } from './types'
 import { formatCombination, isModifierKey, normalizeKey } from './utils'
 
 /** Store callback in ref to avoid effect re-runs when callback changes */
@@ -10,25 +10,31 @@ function useEventCallback<T extends (...args: never[]) => unknown>(fn: T | undef
 }
 
 /**
- * Hook to record a keyboard shortcut from user input.
+ * Hook to record a keyboard shortcut (single key or sequence) from user input.
  *
- * When recording starts, captures the next key combination the user presses.
- * Recording completes when all keys are released after pressing a non-modifier key.
+ * Recording behavior:
+ * - Each key press (after modifiers released) adds to the sequence
+ * - Enter key submits the current sequence
+ * - Timeout submits the current sequence (configurable)
+ * - Escape cancels recording
  *
  * @example
  * ```tsx
  * function KeybindingEditor() {
- *   const { isRecording, startRecording, combination, display, activeKeys } = useRecordHotkey({
- *     onCapture: (combo, display) => {
- *       console.log('Captured:', display.display)
- *       saveKeybinding(display.id)
- *     }
+ *   const { isRecording, startRecording, sequence, display, pendingKeys, activeKeys } = useRecordHotkey({
+ *     onCapture: (sequence, display) => {
+ *       console.log('Captured:', display.display) // "2 W" or "⌘K"
+ *       saveKeybinding(display.id) // "2 w" or "meta+k"
+ *     },
+ *     sequenceTimeout: 1000,
  *   })
  *
  *   return (
  *     <button onClick={() => startRecording()}>
  *       {isRecording
- *         ? (activeKeys ? formatCombination(activeKeys).display : 'Press keys...')
+ *         ? (pendingKeys.length > 0
+ *             ? formatCombination(pendingKeys).display + '...'
+ *             : 'Press keys...')
  *         : (display?.display ?? 'Click to set')}
  *     </button>
  *   )
@@ -36,33 +42,70 @@ function useEventCallback<T extends (...args: never[]) => unknown>(fn: T | undef
  * ```
  */
 export function useRecordHotkey(options: RecordHotkeyOptions = {}): RecordHotkeyResult {
-  const { onCapture: onCaptureProp, onCancel: onCancelProp, preventDefault = true } = options
+  const {
+    onCapture: onCaptureProp,
+    onCancel: onCancelProp,
+    preventDefault = true,
+    sequenceTimeout = 1000,
+  } = options
 
   // Stabilize callbacks to avoid effect re-runs
   const onCapture = useEventCallback(onCaptureProp)
   const onCancel = useEventCallback(onCancelProp)
 
   const [isRecording, setIsRecording] = useState(false)
-  const [combination, setCombination] = useState<KeyCombination | null>(null)
+  const [sequence, setSequence] = useState<HotkeySequence | null>(null)
+  const [pendingKeys, setPendingKeys] = useState<HotkeySequence>([])
   const [activeKeys, setActiveKeys] = useState<KeyCombination | null>(null)
 
   // Track pressed keys during recording
   const pressedKeysRef = useRef<Set<string>>(new Set())
   const hasNonModifierRef = useRef(false)
   const currentComboRef = useRef<KeyCombination | null>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearTimeout_ = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+  }, [])
+
+  const submit = useCallback((seq: HotkeySequence) => {
+    if (seq.length === 0) return
+
+    const display = formatCombination(seq)
+
+    // Clear state
+    clearTimeout_()
+    pressedKeysRef.current.clear()
+    hasNonModifierRef.current = false
+    currentComboRef.current = null
+
+    setSequence(seq)
+    setPendingKeys([])
+    setIsRecording(false)
+    setActiveKeys(null)
+
+    onCapture?.(seq, display)
+  }, [clearTimeout_, onCapture])
 
   const cancel = useCallback(() => {
+    clearTimeout_()
     setIsRecording(false)
+    setPendingKeys([])
     setActiveKeys(null)
     pressedKeysRef.current.clear()
     hasNonModifierRef.current = false
     currentComboRef.current = null
     onCancel?.()
-  }, [onCancel])
+  }, [clearTimeout_, onCancel])
 
   const startRecording = useCallback(() => {
+    clearTimeout_()
     setIsRecording(true)
-    setCombination(null)
+    setSequence(null)
+    setPendingKeys([])
     setActiveKeys(null)
     pressedKeysRef.current.clear()
     hasNonModifierRef.current = false
@@ -70,7 +113,7 @@ export function useRecordHotkey(options: RecordHotkeyOptions = {}): RecordHotkey
 
     // Return cancel function
     return cancel
-  }, [cancel])
+  }, [cancel, clearTimeout_])
 
   useEffect(() => {
     if (!isRecording) return
@@ -79,6 +122,26 @@ export function useRecordHotkey(options: RecordHotkeyOptions = {}): RecordHotkey
       if (preventDefault) {
         e.preventDefault()
         e.stopPropagation()
+      }
+
+      // Clear timeout on any keypress
+      clearTimeout_()
+
+      // Enter submits current sequence
+      if (e.key === 'Enter') {
+        setPendingKeys(current => {
+          if (current.length > 0) {
+            submit(current)
+          }
+          return current
+        })
+        return
+      }
+
+      // Escape cancels
+      if (e.key === 'Escape') {
+        cancel()
+        return
       }
 
       const key = e.key
@@ -133,18 +196,25 @@ export function useRecordHotkey(options: RecordHotkeyOptions = {}): RecordHotkey
 
       if (shouldComplete && hasNonModifierRef.current && currentComboRef.current) {
         const combo = currentComboRef.current
-        const display = formatCombination(combo)
 
-        // Clear state before callbacks to avoid re-entrancy issues
+        // Clear for next key in sequence
         pressedKeysRef.current.clear()
         hasNonModifierRef.current = false
         currentComboRef.current = null
-
-        setCombination(combo)
-        setIsRecording(false)
         setActiveKeys(null)
 
-        onCapture?.(combo, display)
+        // Add to pending sequence
+        setPendingKeys(current => {
+          const newSequence = [...current, combo]
+
+          // Set timeout to submit
+          clearTimeout_()
+          timeoutRef.current = setTimeout(() => {
+            submit(newSequence)
+          }, sequenceTimeout)
+
+          return newSequence
+        })
       }
     }
 
@@ -155,17 +225,23 @@ export function useRecordHotkey(options: RecordHotkeyOptions = {}): RecordHotkey
     return () => {
       window.removeEventListener('keydown', handleKeyDown, true)
       window.removeEventListener('keyup', handleKeyUp, true)
+      clearTimeout_()
     }
-  }, [isRecording, preventDefault])
+  }, [isRecording, preventDefault, sequenceTimeout, clearTimeout_, submit, cancel])
 
-  const display = combination ? formatCombination(combination) : null
+  const display = sequence ? formatCombination(sequence) : null
+
+  // Backwards compatibility: return first key as combination
+  const combination = sequence && sequence.length > 0 ? sequence[0] : null
 
   return {
     isRecording,
     startRecording,
     cancel,
-    combination,
+    sequence,
     display,
+    pendingKeys,
     activeKeys,
+    combination, // deprecated
   }
 }

@@ -1,4 +1,4 @@
-import type { KeyCombination, KeyCombinationDisplay } from './types'
+import type { KeyCombination, KeyCombinationDisplay, HotkeySequence } from './types'
 
 /**
  * Detect if running on macOS
@@ -86,9 +86,9 @@ export function formatKeyForDisplay(key: string): string {
 }
 
 /**
- * Convert a KeyCombination to display format
+ * Format a single KeyCombination (internal helper)
  */
-export function formatCombination(combo: KeyCombination): KeyCombinationDisplay {
+function formatSingleCombination(combo: KeyCombination): { display: string; id: string } {
   const mac = isMac()
   const parts: string[] = []
   const idParts: string[] = []
@@ -121,6 +121,35 @@ export function formatCombination(combo: KeyCombination): KeyCombinationDisplay 
 }
 
 /**
+ * Convert a KeyCombination or HotkeySequence to display format
+ */
+export function formatCombination(combo: KeyCombination): KeyCombinationDisplay
+export function formatCombination(sequence: HotkeySequence): KeyCombinationDisplay
+export function formatCombination(input: KeyCombination | HotkeySequence): KeyCombinationDisplay {
+  // Handle array (sequence)
+  if (Array.isArray(input)) {
+    if (input.length === 0) {
+      return { display: '', id: '', isSequence: false }
+    }
+    if (input.length === 1) {
+      const single = formatSingleCombination(input[0])
+      return { ...single, isSequence: false }
+    }
+    // Multiple keys = sequence
+    const formatted = input.map(formatSingleCombination)
+    return {
+      display: formatted.map(f => f.display).join(' '),
+      id: formatted.map(f => f.id).join(' '),
+      isSequence: true,
+    }
+  }
+
+  // Handle single KeyCombination
+  const single = formatSingleCombination(input)
+  return { ...single, isSequence: false }
+}
+
+/**
  * Check if a key is a modifier key
  */
 export function isModifierKey(key: string): boolean {
@@ -144,21 +173,55 @@ export function isShiftedChar(key: string): boolean {
 }
 
 /**
- * Parse a combination ID back to a KeyCombination
+ * Check if a hotkey string represents a sequence (space-separated keys)
  */
-export function parseCombinationId(id: string): KeyCombination {
-  const parts = id.toLowerCase().split('+')
+export function isSequence(hotkeyStr: string): boolean {
+  // A sequence has spaces that aren't inside a modifier combo
+  // "2 w" is a sequence, "ctrl+k" is not, "ctrl+k ctrl+c" is a sequence
+  return hotkeyStr.includes(' ')
+}
+
+/**
+ * Parse a single combination string (e.g., "ctrl+k") to KeyCombination
+ */
+function parseSingleCombination(str: string): KeyCombination {
+  const parts = str.toLowerCase().split('+')
   const key = parts[parts.length - 1]
 
   return {
     key,
     modifiers: {
-      ctrl: parts.includes('ctrl'),
-      alt: parts.includes('alt'),
+      ctrl: parts.includes('ctrl') || parts.includes('control'),
+      alt: parts.includes('alt') || parts.includes('option'),
       shift: parts.includes('shift'),
-      meta: parts.includes('meta'),
+      meta: parts.includes('meta') || parts.includes('cmd') || parts.includes('command'),
     },
   }
+}
+
+/**
+ * Parse a hotkey string to a HotkeySequence.
+ * Handles both single keys ("ctrl+k") and sequences ("2 w", "ctrl+k ctrl+c")
+ */
+export function parseHotkeyString(hotkeyStr: string): HotkeySequence {
+  if (!hotkeyStr.trim()) return []
+
+  // Split by space to get sequence parts
+  const parts = hotkeyStr.trim().split(/\s+/)
+  return parts.map(parseSingleCombination)
+}
+
+/**
+ * Parse a combination ID back to a KeyCombination (single key only)
+ * @deprecated Use parseHotkeyString for sequence support
+ */
+export function parseCombinationId(id: string): KeyCombination {
+  // For backwards compatibility, if it's a sequence, return first key
+  const sequence = parseHotkeyString(id)
+  if (sequence.length === 0) {
+    return { key: '', modifiers: { ctrl: false, alt: false, shift: false, meta: false } }
+  }
+  return sequence[0]
 }
 
 /**
@@ -169,27 +232,104 @@ export interface KeyConflict {
   key: string
   /** Actions bound to this key */
   actions: string[]
+  /** Type of conflict */
+  type: 'duplicate' | 'prefix'
 }
 
 /**
- * Find conflicts (multiple actions bound to same key) in a keymap
+ * Check if sequence A is a prefix of sequence B
+ */
+function isPrefix(a: HotkeySequence, b: HotkeySequence): boolean {
+  if (a.length >= b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (!combinationsEqual(a[i], b[i])) return false
+  }
+  return true
+}
+
+/**
+ * Check if two KeyCombinations are equal
+ */
+function combinationsEqual(a: KeyCombination, b: KeyCombination): boolean {
+  return (
+    a.key === b.key &&
+    a.modifiers.ctrl === b.modifiers.ctrl &&
+    a.modifiers.alt === b.modifiers.alt &&
+    a.modifiers.shift === b.modifiers.shift &&
+    a.modifiers.meta === b.modifiers.meta
+  )
+}
+
+/**
+ * Check if two HotkeySequences are equal
+ */
+function sequencesEqual(a: HotkeySequence, b: HotkeySequence): boolean {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (!combinationsEqual(a[i], b[i])) return false
+  }
+  return true
+}
+
+/**
+ * Find conflicts in a keymap.
+ * Detects:
+ * - Duplicate: multiple actions bound to the exact same key/sequence
+ * - Prefix: one hotkey is a prefix of another (e.g., "2" and "2 w")
+ *
  * @param keymap - HotkeyMap to check for conflicts
- * @returns Map of key -> actions[] for keys with multiple actions
+ * @returns Map of key -> actions[] for keys with conflicts
  */
 export function findConflicts(keymap: Record<string, string | string[]>): Map<string, string[]> {
-  const keyToActions = new Map<string, string[]>()
+  const conflicts = new Map<string, string[]>()
 
-  for (const [key, actionOrActions] of Object.entries(keymap)) {
-    const actions = Array.isArray(actionOrActions) ? actionOrActions : [actionOrActions]
+  // Parse all hotkeys into sequences for comparison
+  const entries = Object.entries(keymap).map(([key, actionOrActions]) => ({
+    key,
+    sequence: parseHotkeyString(key),
+    actions: Array.isArray(actionOrActions) ? actionOrActions : [actionOrActions],
+  }))
+
+  // Check for duplicate keys (multiple actions on same key)
+  const keyToActions = new Map<string, string[]>()
+  for (const { key, actions } of entries) {
     const existing = keyToActions.get(key) ?? []
     keyToActions.set(key, [...existing, ...actions])
   }
-
-  // Only keep entries with conflicts (multiple actions)
-  const conflicts = new Map<string, string[]>()
   for (const [key, actions] of keyToActions) {
     if (actions.length > 1) {
       conflicts.set(key, actions)
+    }
+  }
+
+  // Check for prefix conflicts
+  for (let i = 0; i < entries.length; i++) {
+    for (let j = i + 1; j < entries.length; j++) {
+      const a = entries[i]
+      const b = entries[j]
+
+      // Check if a is prefix of b or b is prefix of a
+      if (isPrefix(a.sequence, b.sequence)) {
+        // a is a prefix of b - both are conflicted
+        const existingA = conflicts.get(a.key) ?? []
+        if (!existingA.includes(`prefix of: ${b.key}`)) {
+          conflicts.set(a.key, [...existingA, ...a.actions, `prefix of: ${b.key}`])
+        }
+        const existingB = conflicts.get(b.key) ?? []
+        if (!existingB.includes(`has prefix: ${a.key}`)) {
+          conflicts.set(b.key, [...existingB, ...b.actions, `has prefix: ${a.key}`])
+        }
+      } else if (isPrefix(b.sequence, a.sequence)) {
+        // b is a prefix of a
+        const existingB = conflicts.get(b.key) ?? []
+        if (!existingB.includes(`prefix of: ${a.key}`)) {
+          conflicts.set(b.key, [...existingB, ...b.actions, `prefix of: ${a.key}`])
+        }
+        const existingA = conflicts.get(a.key) ?? []
+        if (!existingA.includes(`has prefix: ${b.key}`)) {
+          conflicts.set(a.key, [...existingA, ...a.actions, `has prefix: ${b.key}`])
+        }
+      }
     }
   }
 
@@ -208,5 +348,9 @@ export function hasConflicts(keymap: Record<string, string | string[]>): boolean
  */
 export function getConflictsArray(keymap: Record<string, string | string[]>): KeyConflict[] {
   const conflicts = findConflicts(keymap)
-  return Array.from(conflicts.entries()).map(([key, actions]) => ({ key, actions }))
+  return Array.from(conflicts.entries()).map(([key, actions]) => ({
+    key,
+    actions: actions.filter(a => !a.startsWith('prefix of:') && !a.startsWith('has prefix:')),
+    type: actions.some(a => a.startsWith('prefix of:') || a.startsWith('has prefix:')) ? 'prefix' : 'duplicate',
+  }))
 }

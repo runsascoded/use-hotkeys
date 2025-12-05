@@ -1,8 +1,16 @@
-import { useEffect, useRef } from 'react'
-import { isModifierKey, isShiftedChar, normalizeKey } from './utils'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { KeyCombination, HotkeySequence } from './types'
+import {
+  isModifierKey,
+  isShiftedChar,
+  normalizeKey,
+  parseHotkeyString,
+  isSequence,
+  formatCombination,
+} from './utils'
 
 /**
- * Hotkey definition - maps key combinations to action names
+ * Hotkey definition - maps key combinations/sequences to action names
  */
 export type HotkeyMap = Record<string, string | string[]>
 
@@ -22,95 +30,218 @@ export interface UseHotkeysOptions {
   stopPropagation?: boolean
   /** Enable hotkeys even when focused on input/textarea/select (default: false) */
   enableOnFormTags?: boolean
+  /** Timeout in ms for sequences (default: 1000) */
+  sequenceTimeout?: number
+  /** What happens on timeout: 'submit' executes current sequence, 'cancel' resets (default: 'submit') */
+  onTimeout?: 'submit' | 'cancel'
+  /** Called when sequence input starts */
+  onSequenceStart?: (keys: HotkeySequence) => void
+  /** Called when sequence progresses (new key added) */
+  onSequenceProgress?: (keys: HotkeySequence) => void
+  /** Called when sequence is cancelled (timeout with 'cancel' mode, or no match) */
+  onSequenceCancel?: () => void
+}
+
+export interface UseHotkeysResult {
+  /** Keys pressed so far in current sequence */
+  pendingKeys: HotkeySequence
+  /** Whether currently awaiting more keys in a sequence */
+  isAwaitingSequence: boolean
+  /** Cancel the current sequence */
+  cancelSequence: () => void
 }
 
 /**
- * Parse a hotkey string into its components
- * e.g., "ctrl+shift+k" -> { ctrl: true, shift: true, key: "k" }
+ * Check if a keyboard event matches a KeyCombination
  */
-function parseHotkey(hotkey: string): {
-  ctrl: boolean
-  alt: boolean
-  shift: boolean
-  meta: boolean
-  key: string
-} {
-  const parts = hotkey.toLowerCase().split('+')
-  const key = parts[parts.length - 1]
-
-  return {
-    ctrl: parts.includes('ctrl') || parts.includes('control'),
-    alt: parts.includes('alt') || parts.includes('option'),
-    shift: parts.includes('shift'),
-    meta: parts.includes('meta') || parts.includes('cmd') || parts.includes('command'),
-    key,
-  }
-}
-
-/**
- * Check if a keyboard event matches a hotkey definition
- */
-function matchesHotkey(
-  e: KeyboardEvent,
-  hotkey: { ctrl: boolean; alt: boolean; shift: boolean; meta: boolean; key: string }
-): boolean {
+function matchesCombination(e: KeyboardEvent, combo: KeyCombination): boolean {
   const eventKey = normalizeKey(e.key)
 
   // For shifted characters (like ?, !, @), ignore shift key mismatch
-  // since pressing these keys inherently requires shift
   const shiftMatches = isShiftedChar(e.key)
-    ? (hotkey.shift ? e.shiftKey : true)  // If hotkey wants shift, event must have it; otherwise ignore
-    : e.shiftKey === hotkey.shift
+    ? (combo.modifiers.shift ? e.shiftKey : true)
+    : e.shiftKey === combo.modifiers.shift
 
   return (
-    e.ctrlKey === hotkey.ctrl &&
-    e.altKey === hotkey.alt &&
+    e.ctrlKey === combo.modifiers.ctrl &&
+    e.altKey === combo.modifiers.alt &&
     shiftMatches &&
-    e.metaKey === hotkey.meta &&
-    eventKey === hotkey.key
+    e.metaKey === combo.modifiers.meta &&
+    eventKey === combo.key
   )
 }
 
 /**
- * Hook to register keyboard shortcuts.
+ * Create a KeyCombination from a KeyboardEvent
+ */
+function eventToCombination(e: KeyboardEvent): KeyCombination {
+  return {
+    key: normalizeKey(e.key),
+    modifiers: {
+      ctrl: e.ctrlKey,
+      alt: e.altKey,
+      shift: e.shiftKey,
+      meta: e.metaKey,
+    },
+  }
+}
+
+/**
+ * Check if a pending sequence matches the start of a hotkey sequence
+ */
+function isPartialMatch(pending: HotkeySequence, target: HotkeySequence): boolean {
+  if (pending.length >= target.length) return false
+  for (let i = 0; i < pending.length; i++) {
+    if (
+      pending[i].key !== target[i].key ||
+      pending[i].modifiers.ctrl !== target[i].modifiers.ctrl ||
+      pending[i].modifiers.alt !== target[i].modifiers.alt ||
+      pending[i].modifiers.shift !== target[i].modifiers.shift ||
+      pending[i].modifiers.meta !== target[i].modifiers.meta
+    ) {
+      return false
+    }
+  }
+  return true
+}
+
+/**
+ * Check if two sequences are exactly equal
+ */
+function sequencesMatch(a: HotkeySequence, b: HotkeySequence): boolean {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (
+      a[i].key !== b[i].key ||
+      a[i].modifiers.ctrl !== b[i].modifiers.ctrl ||
+      a[i].modifiers.alt !== b[i].modifiers.alt ||
+      a[i].modifiers.shift !== b[i].modifiers.shift ||
+      a[i].modifiers.meta !== b[i].modifiers.meta
+    ) {
+      return false
+    }
+  }
+  return true
+}
+
+/**
+ * Hook to register keyboard shortcuts with sequence support.
  *
  * @example
  * ```tsx
- * useHotkeys(
- *   {
- *     't': 'setTemp',
- *     'c': 'setCO2',
- *     'ctrl+s': 'save',
- *     'shift+?': 'showHelp',
- *   },
- *   {
- *     setTemp: () => setMetric('temp'),
- *     setCO2: () => setMetric('co2'),
- *     save: () => handleSave(),
- *     showHelp: () => setShowHelp(true),
- *   }
+ * // Single keys
+ * const { pendingKeys } = useHotkeys(
+ *   { 't': 'setTemp', 'ctrl+s': 'save' },
+ *   { setTemp: () => setMetric('temp'), save: handleSave }
+ * )
+ *
+ * // Sequences
+ * const { pendingKeys, isAwaitingSequence } = useHotkeys(
+ *   { '2 w': 'twoWeeks', '2 d': 'twoDays' },
+ *   { twoWeeks: () => setRange('2w'), twoDays: () => setRange('2d') },
+ *   { sequenceTimeout: 1000 }
  * )
  * ```
  */
 export function useHotkeys(
   keymap: HotkeyMap,
   handlers: HandlerMap,
-  options: UseHotkeysOptions = {}
-): void {
+  options: UseHotkeysOptions = {},
+): UseHotkeysResult {
   const {
     enabled = true,
     target,
     preventDefault = true,
     stopPropagation = true,
     enableOnFormTags = false,
+    sequenceTimeout = 1000,
+    onTimeout = 'submit',
+    onSequenceStart,
+    onSequenceProgress,
+    onSequenceCancel,
   } = options
 
-  // Use refs for handlers to avoid re-attaching listeners when handlers change
+  const [pendingKeys, setPendingKeys] = useState<HotkeySequence>([])
+  const [isAwaitingSequence, setIsAwaitingSequence] = useState(false)
+
+  // Use refs for handlers to avoid re-attaching listeners
   const handlersRef = useRef(handlers)
   handlersRef.current = handlers
 
   const keymapRef = useRef(keymap)
   keymapRef.current = keymap
+
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Parse keymap into sequences for matching
+  const parsedKeymapRef = useRef<Array<{ key: string; sequence: HotkeySequence; actions: string[] }>>([])
+
+  useEffect(() => {
+    parsedKeymapRef.current = Object.entries(keymap).map(([key, actionOrActions]) => ({
+      key,
+      sequence: parseHotkeyString(key),
+      actions: Array.isArray(actionOrActions) ? actionOrActions : [actionOrActions],
+    }))
+  }, [keymap])
+
+  const clearPending = useCallback(() => {
+    setPendingKeys([])
+    setIsAwaitingSequence(false)
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+  }, [])
+
+  const cancelSequence = useCallback(() => {
+    clearPending()
+    onSequenceCancel?.()
+  }, [clearPending, onSequenceCancel])
+
+  // Try to execute a handler for the given sequence
+  const tryExecute = useCallback((
+    sequence: HotkeySequence,
+    e: KeyboardEvent,
+  ): boolean => {
+    for (const entry of parsedKeymapRef.current) {
+      if (sequencesMatch(sequence, entry.sequence)) {
+        for (const action of entry.actions) {
+          const handler = handlersRef.current[action]
+          if (handler) {
+            if (preventDefault) {
+              e.preventDefault()
+            }
+            if (stopPropagation) {
+              e.stopPropagation()
+            }
+            handler(e)
+            return true
+          }
+        }
+      }
+    }
+    return false
+  }, [preventDefault, stopPropagation])
+
+  // Check if sequence has any potential matches (partial or full)
+  const hasPotentialMatch = useCallback((sequence: HotkeySequence): boolean => {
+    for (const entry of parsedKeymapRef.current) {
+      if (isPartialMatch(sequence, entry.sequence) || sequencesMatch(sequence, entry.sequence)) {
+        return true
+      }
+    }
+    return false
+  }, [])
+
+  // Check if there are any sequences that start with current pending
+  const hasSequenceExtension = useCallback((sequence: HotkeySequence): boolean => {
+    for (const entry of parsedKeymapRef.current) {
+      if (entry.sequence.length > sequence.length && isPartialMatch(sequence, entry.sequence)) {
+        return true
+      }
+    }
+    return false
+  }, [])
 
   useEffect(() => {
     if (!enabled) return
@@ -120,12 +251,12 @@ export function useHotkeys(
     const handleKeyDown = (e: KeyboardEvent) => {
       // Skip if focused on form element (unless enabled)
       if (!enableOnFormTags) {
-        const target = e.target as HTMLElement
+        const eventTarget = e.target as HTMLElement
         if (
-          target instanceof HTMLInputElement ||
-          target instanceof HTMLTextAreaElement ||
-          target instanceof HTMLSelectElement ||
-          target.isContentEditable
+          eventTarget instanceof HTMLInputElement ||
+          eventTarget instanceof HTMLTextAreaElement ||
+          eventTarget instanceof HTMLSelectElement ||
+          eventTarget.isContentEditable
         ) {
           return
         }
@@ -136,27 +267,118 @@ export function useHotkeys(
         return
       }
 
-      // Check each hotkey in the map
-      for (const [hotkeyStr, actionName] of Object.entries(keymapRef.current)) {
-        const hotkey = parseHotkey(hotkeyStr)
+      // Clear any existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
 
-        if (matchesHotkey(e, hotkey)) {
-          // Find the handler(s) for this action
-          const actions = Array.isArray(actionName) ? actionName : [actionName]
+      // Enter key submits current sequence
+      if (e.key === 'Enter' && pendingKeys.length > 0) {
+        e.preventDefault()
+        const executed = tryExecute(pendingKeys, e)
+        clearPending()
+        if (!executed) {
+          onSequenceCancel?.()
+        }
+        return
+      }
 
-          for (const action of actions) {
-            const handler = handlersRef.current[action]
-            if (handler) {
-              if (preventDefault) {
-                e.preventDefault()
-              }
-              if (stopPropagation) {
-                e.stopPropagation()
-              }
-              handler(e)
-              return // Only handle first match
-            }
+      // Escape cancels current sequence
+      if (e.key === 'Escape' && pendingKeys.length > 0) {
+        e.preventDefault()
+        cancelSequence()
+        return
+      }
+
+      // Add current key to sequence
+      const currentCombo = eventToCombination(e)
+      const newSequence = [...pendingKeys, currentCombo]
+
+      // Check for exact match first
+      const exactMatch = tryExecute(newSequence, e)
+      if (exactMatch) {
+        clearPending()
+        return
+      }
+
+      // Check if this could be the start of a longer sequence
+      if (hasPotentialMatch(newSequence)) {
+        // Check if there are longer sequences this could match
+        if (hasSequenceExtension(newSequence)) {
+          // Wait for more keys
+          setPendingKeys(newSequence)
+          setIsAwaitingSequence(true)
+
+          if (pendingKeys.length === 0) {
+            onSequenceStart?.(newSequence)
+          } else {
+            onSequenceProgress?.(newSequence)
           }
+
+          // Set timeout
+          timeoutRef.current = setTimeout(() => {
+            if (onTimeout === 'submit') {
+              // Try to execute whatever we have
+              // Note: We need to get the current pending keys from state
+              setPendingKeys(current => {
+                if (current.length > 0) {
+                  // We can't call tryExecute here because we don't have the event
+                  // So we'll just clear and call onSequenceCancel
+                  onSequenceCancel?.()
+                }
+                return []
+              })
+              setIsAwaitingSequence(false)
+            } else {
+              // Cancel mode
+              setPendingKeys([])
+              setIsAwaitingSequence(false)
+              onSequenceCancel?.()
+            }
+            timeoutRef.current = null
+          }, sequenceTimeout)
+
+          // Prevent default for potential sequence keys
+          if (preventDefault) {
+            e.preventDefault()
+          }
+          return
+        }
+      }
+
+      // No match and no potential - reset and try single key
+      if (pendingKeys.length > 0) {
+        clearPending()
+        onSequenceCancel?.()
+      }
+
+      // Try as single key (sequence of 1)
+      const singleMatch = tryExecute([currentCombo], e)
+      if (!singleMatch) {
+        // Check if single key could start a sequence
+        if (hasSequenceExtension([currentCombo])) {
+          setPendingKeys([currentCombo])
+          setIsAwaitingSequence(true)
+          onSequenceStart?.([currentCombo])
+
+          if (preventDefault) {
+            e.preventDefault()
+          }
+
+          // Set timeout
+          timeoutRef.current = setTimeout(() => {
+            if (onTimeout === 'submit') {
+              setPendingKeys([])
+              setIsAwaitingSequence(false)
+              onSequenceCancel?.()
+            } else {
+              setPendingKeys([])
+              setIsAwaitingSequence(false)
+              onSequenceCancel?.()
+            }
+            timeoutRef.current = null
+          }, sequenceTimeout)
         }
       }
     }
@@ -165,6 +387,28 @@ export function useHotkeys(
 
     return () => {
       targetElement.removeEventListener('keydown', handleKeyDown as EventListener)
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
     }
-  }, [enabled, target, preventDefault, stopPropagation, enableOnFormTags])
+  }, [
+    enabled,
+    target,
+    preventDefault,
+    stopPropagation,
+    enableOnFormTags,
+    sequenceTimeout,
+    onTimeout,
+    pendingKeys,
+    clearPending,
+    cancelSequence,
+    tryExecute,
+    hasPotentialMatch,
+    hasSequenceExtension,
+    onSequenceStart,
+    onSequenceProgress,
+    onSequenceCancel,
+  ])
+
+  return { pendingKeys, isAwaitingSequence, cancelSequence }
 }

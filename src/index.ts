@@ -1,12 +1,13 @@
 // Types
 export type {
+  HotkeySequence,
   KeyCombination,
   KeyCombinationDisplay,
   RecordHotkeyOptions,
   RecordHotkeyResult,
 } from './types'
 
-export type { HandlerMap, HotkeyMap, UseHotkeysOptions } from './useHotkeys'
+export type { HandlerMap, HotkeyMap, UseHotkeysOptions, UseHotkeysResult } from './useHotkeys'
 export type { UseEditableHotkeysOptions, UseEditableHotkeysResult } from './useEditableHotkeys'
 export type {
   BindingInfo,
@@ -44,8 +45,10 @@ export {
   hasConflicts,
   isMac,
   isModifierKey,
+  isSequence,
   normalizeKey,
   parseCombinationId,
+  parseHotkeyString,
 } from './utils'
 
 export type { KeyConflict } from './utils'

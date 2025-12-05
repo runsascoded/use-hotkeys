@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { HotkeySequence } from './types'
 import { useHotkeys, HotkeyMap, HandlerMap, UseHotkeysOptions } from './useHotkeys'
 import { findConflicts } from './utils'
 
@@ -24,6 +25,12 @@ export interface UseEditableHotkeysResult {
   conflicts: Map<string, string[]>
   /** Whether there are any conflicts in the current keymap */
   hasConflicts: boolean
+  /** Keys pressed so far in current sequence */
+  pendingKeys: HotkeySequence
+  /** Whether currently awaiting more keys in a sequence */
+  isAwaitingSequence: boolean
+  /** Cancel the current sequence */
+  cancelSequence: () => void
 }
 
 /**
@@ -124,7 +131,7 @@ export function useEditableHotkeys(
   }, [keymap, conflicts, disableConflicts])
 
   // Register hotkeys (using effective keymap that excludes conflicts)
-  useHotkeys(effectiveKeymap, handlers, hotkeyOptions)
+  const { pendingKeys, isAwaitingSequence, cancelSequence } = useHotkeys(effectiveKeymap, handlers, hotkeyOptions)
 
   const setBinding = useCallback((action: string, key: string) => {
     setOverrides((prev) => {
@@ -150,5 +157,16 @@ export function useEditableHotkeys(
     setOverrides({})
   }, [])
 
-  return { keymap, setBinding, setKeymap, reset, overrides, conflicts, hasConflicts: hasConflictsValue }
+  return {
+    keymap,
+    setBinding,
+    setKeymap,
+    reset,
+    overrides,
+    conflicts,
+    hasConflicts: hasConflictsValue,
+    pendingKeys,
+    isAwaitingSequence,
+    cancelSequence,
+  }
 }

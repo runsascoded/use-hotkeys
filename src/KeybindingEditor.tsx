@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { HotkeyMap } from './useHotkeys'
-import type { KeyCombination, KeyCombinationDisplay } from './types'
+import type { HotkeySequence, KeyCombination, KeyCombinationDisplay } from './types'
 import { useRecordHotkey } from './useRecordHotkey'
 import { findConflicts, formatCombination, parseCombinationId } from './utils'
 
@@ -85,7 +85,7 @@ export function KeybindingEditor({
 
   const { isRecording, startRecording, cancel, activeKeys } = useRecordHotkey({
     onCapture: useCallback(
-      (_combo: KeyCombination, display: KeyCombinationDisplay) => {
+      (_sequence: HotkeySequence, display: KeyCombinationDisplay) => {
         if (editingAction) {
           onChange(editingAction, display.id)
           setEditingAction(null)
