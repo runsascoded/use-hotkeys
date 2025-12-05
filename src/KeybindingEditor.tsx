@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import type { HotkeyMap } from './useHotkeys'
 import type { KeyCombination, KeyCombinationDisplay } from './types'
 import { useRecordHotkey } from './useRecordHotkey'
-import { formatCombination, parseCombinationId } from './utils'
+import { findConflicts, formatCombination, parseCombinationId } from './utils'
 
 export interface KeybindingEditorProps {
   /** Current keymap */
@@ -52,29 +52,6 @@ function buildActionMap(keymap: HotkeyMap): Map<string, string> {
     }
   }
   return map
-}
-
-/**
- * Find conflicts (multiple actions bound to same key)
- */
-function findConflicts(keymap: HotkeyMap): Map<string, string[]> {
-  const keyToActions = new Map<string, string[]>()
-
-  for (const [key, actionOrActions] of Object.entries(keymap)) {
-    const actions = Array.isArray(actionOrActions) ? actionOrActions : [actionOrActions]
-    const existing = keyToActions.get(key) ?? []
-    keyToActions.set(key, [...existing, ...actions])
-  }
-
-  // Only keep entries with conflicts (multiple actions)
-  const conflicts = new Map<string, string[]>()
-  for (const [key, actions] of keyToActions) {
-    if (actions.length > 1) {
-      conflicts.set(key, actions)
-    }
-  }
-
-  return conflicts
 }
 
 /**

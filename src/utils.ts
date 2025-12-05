@@ -160,3 +160,53 @@ export function parseCombinationId(id: string): KeyCombination {
     },
   }
 }
+
+/**
+ * Conflict detection result
+ */
+export interface KeyConflict {
+  /** The key combination that has a conflict */
+  key: string
+  /** Actions bound to this key */
+  actions: string[]
+}
+
+/**
+ * Find conflicts (multiple actions bound to same key) in a keymap
+ * @param keymap - HotkeyMap to check for conflicts
+ * @returns Map of key -> actions[] for keys with multiple actions
+ */
+export function findConflicts(keymap: Record<string, string | string[]>): Map<string, string[]> {
+  const keyToActions = new Map<string, string[]>()
+
+  for (const [key, actionOrActions] of Object.entries(keymap)) {
+    const actions = Array.isArray(actionOrActions) ? actionOrActions : [actionOrActions]
+    const existing = keyToActions.get(key) ?? []
+    keyToActions.set(key, [...existing, ...actions])
+  }
+
+  // Only keep entries with conflicts (multiple actions)
+  const conflicts = new Map<string, string[]>()
+  for (const [key, actions] of keyToActions) {
+    if (actions.length > 1) {
+      conflicts.set(key, actions)
+    }
+  }
+
+  return conflicts
+}
+
+/**
+ * Check if a keymap has any conflicts
+ */
+export function hasConflicts(keymap: Record<string, string | string[]>): boolean {
+  return findConflicts(keymap).size > 0
+}
+
+/**
+ * Get conflicts as an array of KeyConflict objects
+ */
+export function getConflictsArray(keymap: Record<string, string | string[]>): KeyConflict[] {
+  const conflicts = findConflicts(keymap)
+  return Array.from(conflicts.entries()).map(([key, actions]) => ({ key, actions }))
+}

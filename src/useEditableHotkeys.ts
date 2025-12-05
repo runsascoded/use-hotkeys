@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHotkeys, HotkeyMap, HandlerMap, UseHotkeysOptions } from './useHotkeys'
+import { findConflicts } from './utils'
 
 export interface UseEditableHotkeysOptions extends UseHotkeysOptions {
   /** localStorage key for persistence (omit to disable persistence) */
   storageKey?: string
+  /** When true, keys with multiple actions bound are disabled (default: true) */
+  disableConflicts?: boolean
 }
 
 export interface UseEditableHotkeysResult {
@@ -17,6 +20,10 @@ export interface UseEditableHotkeysResult {
   reset: () => void
   /** User overrides only (for inspection/export) */
   overrides: Partial<HotkeyMap>
+  /** Map of key -> actions[] for keys with multiple actions bound */
+  conflicts: Map<string, string[]>
+  /** Whether there are any conflicts in the current keymap */
+  hasConflicts: boolean
 }
 
 /**
@@ -36,7 +43,7 @@ export function useEditableHotkeys(
   handlers: HandlerMap,
   options: UseEditableHotkeysOptions = {},
 ): UseEditableHotkeysResult {
-  const { storageKey, ...hotkeyOptions } = options
+  const { storageKey, disableConflicts = true, ...hotkeyOptions } = options
 
   // Load overrides from storage on mount
   const [overrides, setOverrides] = useState<Partial<HotkeyMap>>(() => {
@@ -97,11 +104,42 @@ export function useEditableHotkeys(
     return result
   }, [defaults, overrides])
 
-  // Register hotkeys
-  useHotkeys(keymap, handlers, hotkeyOptions)
+  // Compute conflicts from current keymap
+  const conflicts = useMemo(() => findConflicts(keymap), [keymap])
+  const hasConflictsValue = conflicts.size > 0
+
+  // Effective keymap for useHotkeys - removes conflicting keys if disableConflicts is true
+  const effectiveKeymap = useMemo(() => {
+    if (!disableConflicts || conflicts.size === 0) {
+      return keymap
+    }
+    // Filter out keys that have conflicts
+    const filtered: HotkeyMap = {}
+    for (const [key, action] of Object.entries(keymap)) {
+      if (!conflicts.has(key)) {
+        filtered[key] = action
+      }
+    }
+    return filtered
+  }, [keymap, conflicts, disableConflicts])
+
+  // Register hotkeys (using effective keymap that excludes conflicts)
+  useHotkeys(effectiveKeymap, handlers, hotkeyOptions)
 
   const setBinding = useCallback((action: string, key: string) => {
-    setOverrides((prev) => ({ ...prev, [key]: action }))
+    setOverrides((prev) => {
+      // Remove any existing override that maps a different key to this action
+      const cleaned: Partial<HotkeyMap> = {}
+      for (const [k, v] of Object.entries(prev)) {
+        // Keep the entry unless it's a different key mapping to the same action
+        const actions = Array.isArray(v) ? v : [v]
+        if (k === key || !actions.includes(action)) {
+          cleaned[k] = v
+        }
+      }
+      // Add the new binding
+      return { ...cleaned, [key]: action }
+    })
   }, [])
 
   const setKeymap = useCallback((newOverrides: Partial<HotkeyMap>) => {
@@ -112,5 +150,5 @@ export function useEditableHotkeys(
     setOverrides({})
   }, [])
 
-  return { keymap, setBinding, setKeymap, reset, overrides }
+  return { keymap, setBinding, setKeymap, reset, overrides, conflicts, hasConflicts: hasConflictsValue }
 }

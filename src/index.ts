@@ -26,10 +26,15 @@ export { ShortcutsModal } from './ShortcutsModal'
 
 // Utilities
 export {
+  findConflicts,
   formatCombination,
   formatKeyForDisplay,
+  getConflictsArray,
+  hasConflicts,
   isMac,
   isModifierKey,
   normalizeKey,
   parseCombinationId,
 } from './utils'
+
+export type { KeyConflict } from './utils'
