@@ -14,6 +14,17 @@ export type {
   KeybindingEditorRenderProps,
 } from './KeybindingEditor'
 export type { ShortcutGroup, ShortcutsModalProps } from './ShortcutsModal'
+export type {
+  KeyboardShortcutsContextValue,
+  KeyboardShortcutsProviderProps,
+} from './KeyboardShortcutsContext'
+
+// Context & Provider
+export {
+  KeyboardShortcutsProvider,
+  useKeyboardShortcutsContext,
+  useRegisteredHotkeys,
+} from './KeyboardShortcutsContext'
 
 // Hooks
 export { useHotkeys } from './useHotkeys'
