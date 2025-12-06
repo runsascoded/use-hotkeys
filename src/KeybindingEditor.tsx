@@ -24,6 +24,9 @@ export interface KeybindingEditorProps {
 export interface KeybindingEditorRenderProps {
   bindings: BindingInfo[]
   editingAction: string | null
+  /** Keys already pressed and released (waiting for timeout or more keys) */
+  pendingKeys: HotkeySequence
+  /** Keys currently being held down */
   activeKeys: KeyCombination | null
   startEditing: (action: string) => void
   cancelEditing: () => void
@@ -83,7 +86,7 @@ export function KeybindingEditor({
   const defaultActionMap = useMemo(() => buildActionMap(defaults), [defaults])
   const conflicts = useMemo(() => findConflicts(keymap), [keymap])
 
-  const { isRecording, startRecording, cancel, activeKeys } = useRecordHotkey({
+  const { isRecording, startRecording, cancel, pendingKeys, activeKeys } = useRecordHotkey({
     onCapture: useCallback(
       (_sequence: HotkeySequence, display: KeyCombinationDisplay) => {
         if (editingAction) {
@@ -115,6 +118,27 @@ export function KeybindingEditor({
     onReset?.()
   }, [onReset])
 
+  // Format keys for display during recording
+  // Shows pendingKeys (released keys) + activeKeys (currently held)
+  const getRecordingDisplay = () => {
+    // Nothing pressed yet
+    if (pendingKeys.length === 0 && (!activeKeys || !activeKeys.key)) {
+      return 'Press keys...'
+    }
+
+    // Format pending keys (already pressed and released)
+    let display = pendingKeys.length > 0 ? formatCombination(pendingKeys).display : ''
+
+    // Add currently held keys
+    if (activeKeys && activeKeys.key) {
+      if (display) display += ' → '
+      display += formatCombination([activeKeys]).display
+    }
+
+    // Ellipsis indicates we're waiting for timeout or more keys
+    return display + '...'
+  }
+
   // Build binding info for all actions
   const bindings: BindingInfo[] = useMemo(() => {
     const allActions = new Set([...actionMap.keys(), ...defaultActionMap.keys()])
@@ -144,6 +168,7 @@ export function KeybindingEditor({
         {children({
           bindings,
           editingAction,
+          pendingKeys,
           activeKeys,
           startEditing,
           cancelEditing,
@@ -206,7 +231,7 @@ export function KeybindingEditor({
                         fontFamily: 'monospace',
                       }}
                     >
-                      {activeKeys ? formatCombination(activeKeys).display : 'Press keys...'}
+                      {getRecordingDisplay()}
                     </kbd>
                   ) : (
                     <kbd
