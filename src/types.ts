@@ -69,3 +69,56 @@ export interface RecordHotkeyOptions {
   /** Timeout in ms before sequence is submitted (default: 1000) */
   sequenceTimeout?: number
 }
+
+/**
+ * Definition of an action that can be triggered by hotkeys or omnibar
+ */
+export interface ActionDefinition {
+  /** Display label for the action */
+  label: string
+  /** Longer description (shown in omnibar, tooltips) */
+  description?: string
+  /** Category for grouping (e.g., "Metrics", "Time Range") */
+  category?: string
+  /** Additional search keywords */
+  keywords?: string[]
+  /** Icon identifier (user provides rendering) */
+  icon?: string
+  /** Whether the action is currently enabled (default: true) */
+  enabled?: boolean
+}
+
+/**
+ * Registry of all available actions
+ */
+export type ActionRegistry = Record<string, ActionDefinition>
+
+/**
+ * An action with its current keybinding(s) and search match info
+ */
+export interface ActionSearchResult {
+  /** Action ID */
+  id: string
+  /** Action definition */
+  action: ActionDefinition
+  /** Current keybindings for this action */
+  bindings: string[]
+  /** Fuzzy match score (higher = better match) */
+  score: number
+  /** Matched ranges in label for highlighting */
+  labelMatches: Array<[number, number]>
+}
+
+/**
+ * A possible completion for a partially-typed sequence
+ */
+export interface SequenceCompletion {
+  /** The next key(s) needed to complete this sequence */
+  nextKeys: string
+  /** The full hotkey string */
+  fullSequence: string
+  /** Display format for the full sequence */
+  display: KeyCombinationDisplay
+  /** Actions triggered by this sequence */
+  actions: string[]
+}

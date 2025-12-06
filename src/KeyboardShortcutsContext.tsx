@@ -1,12 +1,15 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import type { ActionRegistry, ActionSearchResult, HotkeySequence, SequenceCompletion } from './types'
 import { useHotkeys, HotkeyMap, HandlerMap, UseHotkeysOptions, UseHotkeysResult } from './useHotkeys'
-import { findConflicts } from './utils'
+import { findConflicts, searchActions, getSequenceCompletions, getActionBindings } from './utils'
 
 export interface KeyboardShortcutsContextValue {
   /** Default keymap (before user overrides) */
   defaults: HotkeyMap
   /** Current keymap (defaults merged with user overrides) */
   keymap: HotkeyMap
+  /** Registry of available actions (if provided) */
+  actions: ActionRegistry
   /** Update a single keybinding (replaces existing binding for the action) */
   setBinding: (action: string, key: string) => void
   /** Add a new key binding for an action (keeps existing bindings) */
@@ -25,6 +28,12 @@ export interface KeyboardShortcutsContextValue {
   hasConflicts: boolean
   /** When true, keys with multiple actions bound are disabled */
   disableConflicts: boolean
+  /** Search actions by query */
+  searchActions: (query: string) => ActionSearchResult[]
+  /** Get sequence completions for pending keys */
+  getCompletions: (pendingKeys: HotkeySequence) => SequenceCompletion[]
+  /** Get all bindings for an action */
+  getBindingsForAction: (actionId: string) => string[]
 }
 
 const KeyboardShortcutsContext = createContext<KeyboardShortcutsContextValue | null>(null)
@@ -32,6 +41,8 @@ const KeyboardShortcutsContext = createContext<KeyboardShortcutsContextValue | n
 export interface KeyboardShortcutsProviderProps {
   /** Default hotkey map */
   defaults: HotkeyMap
+  /** Registry of available actions (for omnibar and action management) */
+  actions?: ActionRegistry
   /** localStorage key for persistence (omit to disable persistence) */
   storageKey?: string
   /** When true, keys with multiple actions bound are disabled (default: true) */
@@ -55,6 +66,7 @@ export interface KeyboardShortcutsProviderProps {
  */
 export function KeyboardShortcutsProvider({
   defaults,
+  actions: actionsProp = {},
   storageKey,
   disableConflicts = true,
   children,
@@ -137,6 +149,27 @@ export function KeyboardShortcutsProvider({
   const conflicts = useMemo(() => findConflicts(keymap), [keymap])
   const hasConflictsValue = conflicts.size > 0
 
+  // Action bindings map
+  const actionBindings = useMemo(() => getActionBindings(keymap), [keymap])
+
+  // Search actions helper
+  const searchActionsInContext = useCallback(
+    (query: string) => searchActions(query, actionsProp, keymap),
+    [actionsProp, keymap],
+  )
+
+  // Get sequence completions helper
+  const getCompletions = useCallback(
+    (pendingKeys: HotkeySequence) => getSequenceCompletions(pendingKeys, keymap),
+    [keymap],
+  )
+
+  // Get bindings for action helper
+  const getBindingsForAction = useCallback(
+    (actionId: string) => actionBindings.get(actionId) ?? [],
+    [actionBindings],
+  )
+
   const setBinding = useCallback((action: string, key: string) => {
     setOverrides((prev) => {
       // Remove any existing override that maps a different key to this action
@@ -187,6 +220,7 @@ export function KeyboardShortcutsProvider({
     () => ({
       defaults,
       keymap,
+      actions: actionsProp,
       setBinding,
       addBinding,
       removeBinding,
@@ -196,8 +230,11 @@ export function KeyboardShortcutsProvider({
       conflicts,
       hasConflicts: hasConflictsValue,
       disableConflicts,
+      searchActions: searchActionsInContext,
+      getCompletions,
+      getBindingsForAction,
     }),
-    [defaults, keymap, setBinding, addBinding, removeBinding, setKeymap, reset, overrides, conflicts, hasConflictsValue, disableConflicts],
+    [defaults, keymap, actionsProp, setBinding, addBinding, removeBinding, setKeymap, reset, overrides, conflicts, hasConflictsValue, disableConflicts, searchActionsInContext, getCompletions, getBindingsForAction],
   )
 
   return (

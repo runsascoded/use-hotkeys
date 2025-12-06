@@ -354,3 +354,248 @@ export function getConflictsArray(keymap: Record<string, string | string[]>): Ke
     type: actions.some(a => a.startsWith('prefix of:') || a.startsWith('has prefix:')) ? 'prefix' : 'duplicate',
   }))
 }
+
+// ============================================================================
+// Sequence Completion Utilities
+// ============================================================================
+
+import type { SequenceCompletion, ActionRegistry, ActionSearchResult } from './types'
+
+/**
+ * Get possible completions for a partially-typed sequence.
+ *
+ * @example
+ * ```tsx
+ * const keymap = { '2 w': 'twoWeeks', '2 d': 'twoDays', 't': 'temp' }
+ * const pending = parseHotkeyString('2')
+ * const completions = getSequenceCompletions(pending, keymap)
+ * // Returns:
+ * // [
+ * //   { nextKeys: 'w', fullSequence: '2 w', actions: ['twoWeeks'], ... },
+ * //   { nextKeys: 'd', fullSequence: '2 d', actions: ['twoDays'], ... },
+ * // ]
+ * ```
+ */
+export function getSequenceCompletions(
+  pendingKeys: HotkeySequence,
+  keymap: Record<string, string | string[]>,
+): SequenceCompletion[] {
+  if (pendingKeys.length === 0) return []
+
+  const completions: SequenceCompletion[] = []
+
+  for (const [hotkeyStr, actionOrActions] of Object.entries(keymap)) {
+    const sequence = parseHotkeyString(hotkeyStr)
+
+    // Check if pending is a prefix of this sequence
+    if (sequence.length <= pendingKeys.length) continue
+
+    let isPrefix = true
+    for (let i = 0; i < pendingKeys.length; i++) {
+      if (!combinationsEqual(pendingKeys[i], sequence[i])) {
+        isPrefix = false
+        break
+      }
+    }
+
+    if (isPrefix) {
+      // Get remaining keys needed
+      const remainingKeys = sequence.slice(pendingKeys.length)
+      const nextKeys = formatCombination(remainingKeys).id
+
+      const actions = Array.isArray(actionOrActions) ? actionOrActions : [actionOrActions]
+
+      completions.push({
+        nextKeys,
+        fullSequence: hotkeyStr,
+        display: formatCombination(sequence),
+        actions,
+      })
+    }
+  }
+
+  return completions
+}
+
+/**
+ * Build a map of action -> keys[] from a keymap
+ */
+export function getActionBindings(keymap: Record<string, string | string[]>): Map<string, string[]> {
+  const actionToKeys = new Map<string, string[]>()
+
+  for (const [key, actionOrActions] of Object.entries(keymap)) {
+    const actions = Array.isArray(actionOrActions) ? actionOrActions : [actionOrActions]
+    for (const action of actions) {
+      const existing = actionToKeys.get(action) ?? []
+      actionToKeys.set(action, [...existing, key])
+    }
+  }
+
+  return actionToKeys
+}
+
+// ============================================================================
+// Fuzzy Search Utilities
+// ============================================================================
+
+/**
+ * Fuzzy match result
+ */
+export interface FuzzyMatchResult {
+  /** Whether the pattern matched */
+  matched: boolean
+  /** Match score (higher = better) */
+  score: number
+  /** Matched character ranges for highlighting [start, end] */
+  ranges: Array<[number, number]>
+}
+
+/**
+ * Perform fuzzy matching of a pattern against text.
+ * Returns match info including score and ranges for highlighting.
+ *
+ * Scoring:
+ * - Consecutive matches score higher
+ * - Matches at word boundaries score higher
+ * - Earlier matches score higher
+ */
+export function fuzzyMatch(pattern: string, text: string): FuzzyMatchResult {
+  if (!pattern) return { matched: true, score: 1, ranges: [] }
+  if (!text) return { matched: false, score: 0, ranges: [] }
+
+  const patternLower = pattern.toLowerCase()
+  const textLower = text.toLowerCase()
+
+  let patternIdx = 0
+  let score = 0
+  let consecutiveBonus = 0
+  let lastMatchIdx = -2
+  const ranges: Array<[number, number]> = []
+  let rangeStart = -1
+
+  for (let textIdx = 0; textIdx < textLower.length && patternIdx < patternLower.length; textIdx++) {
+    if (textLower[textIdx] === patternLower[patternIdx]) {
+      // Base score for match
+      let matchScore = 1
+
+      // Bonus for consecutive matches
+      if (lastMatchIdx === textIdx - 1) {
+        consecutiveBonus += 1
+        matchScore += consecutiveBonus
+      } else {
+        consecutiveBonus = 0
+      }
+
+      // Bonus for word boundary match (start of word)
+      if (textIdx === 0 || /[\s\-_./]/.test(text[textIdx - 1])) {
+        matchScore += 2
+      }
+
+      // Bonus for matching uppercase (camelCase boundary)
+      if (text[textIdx] === text[textIdx].toUpperCase() && /[a-z]/.test(text[textIdx].toLowerCase())) {
+        matchScore += 1
+      }
+
+      // Penalty for later matches (prefer earlier matches)
+      matchScore -= textIdx * 0.01
+
+      score += matchScore
+      lastMatchIdx = textIdx
+      patternIdx++
+
+      // Track ranges for highlighting
+      if (rangeStart === -1) {
+        rangeStart = textIdx
+      }
+    } else {
+      // End current range
+      if (rangeStart !== -1) {
+        ranges.push([rangeStart, lastMatchIdx + 1])
+        rangeStart = -1
+      }
+    }
+  }
+
+  // Close final range
+  if (rangeStart !== -1) {
+    ranges.push([rangeStart, lastMatchIdx + 1])
+  }
+
+  const matched = patternIdx === patternLower.length
+
+  // Bonus for exact match
+  if (matched && textLower === patternLower) {
+    score += 10
+  }
+
+  // Bonus for prefix match
+  if (matched && textLower.startsWith(patternLower)) {
+    score += 5
+  }
+
+  return { matched, score, ranges }
+}
+
+/**
+ * Search actions by query with fuzzy matching.
+ *
+ * @example
+ * ```tsx
+ * const results = searchActions('temp', actions, keymap)
+ * // Returns ActionSearchResult[] sorted by relevance
+ * ```
+ */
+export function searchActions(
+  query: string,
+  actions: ActionRegistry,
+  keymap?: Record<string, string | string[]>,
+): ActionSearchResult[] {
+  const actionBindings = keymap ? getActionBindings(keymap) : new Map<string, string[]>()
+  const results: ActionSearchResult[] = []
+
+  for (const [id, action] of Object.entries(actions)) {
+    // Skip disabled actions
+    if (action.enabled === false) continue
+
+    // Match against multiple fields
+    const labelMatch = fuzzyMatch(query, action.label)
+    const descMatch = action.description ? fuzzyMatch(query, action.description) : { matched: false, score: 0, ranges: [] }
+    const categoryMatch = action.category ? fuzzyMatch(query, action.category) : { matched: false, score: 0, ranges: [] }
+    const idMatch = fuzzyMatch(query, id)
+
+    // Check keywords
+    let keywordScore = 0
+    if (action.keywords) {
+      for (const keyword of action.keywords) {
+        const kwMatch = fuzzyMatch(query, keyword)
+        if (kwMatch.matched) {
+          keywordScore = Math.max(keywordScore, kwMatch.score)
+        }
+      }
+    }
+
+    // Calculate total score (label weighted highest)
+    const matched = labelMatch.matched || descMatch.matched || categoryMatch.matched || idMatch.matched || keywordScore > 0
+    if (!matched && query) continue
+
+    const score =
+      (labelMatch.matched ? labelMatch.score * 3 : 0) +
+      (descMatch.matched ? descMatch.score * 1.5 : 0) +
+      (categoryMatch.matched ? categoryMatch.score * 1 : 0) +
+      (idMatch.matched ? idMatch.score * 0.5 : 0) +
+      keywordScore * 2
+
+    results.push({
+      id,
+      action,
+      bindings: actionBindings.get(id) ?? [],
+      score,
+      labelMatches: labelMatch.ranges,
+    })
+  }
+
+  // Sort by score (descending)
+  results.sort((a, b) => b.score - a.score)
+
+  return results
+}
