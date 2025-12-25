@@ -14,8 +14,10 @@ export interface KeyboardShortcutsContextValue {
   setBinding: (action: string, key: string) => void
   /** Add a new key binding for an action (keeps existing bindings) */
   addBinding: (action: string, key: string) => void
-  /** Remove a key binding */
+  /** Remove a key binding entirely */
   removeBinding: (key: string) => void
+  /** Remove a specific action from a key (for resolving conflicts) */
+  removeBindingForAction: (action: string, key: string) => void
   /** Update multiple keybindings at once */
   setKeymap: (overrides: Partial<HotkeyMap>) => void
   /** Reset all overrides to defaults */
@@ -274,6 +276,47 @@ export function KeyboardShortcutsProvider({
     })
   }, [defaults])
 
+  const removeBindingForAction = useCallback((action: string, key: string) => {
+    setOverrides((prev) => {
+      // Get current actions for this key (from overrides or defaults)
+      const overrideValue = prev[key]
+      const defaultValue = defaults[key]
+
+      let currentActions: string[]
+      if (overrideValue !== undefined) {
+        if (overrideValue === '') {
+          // Key was already removed, nothing to do
+          return prev
+        }
+        currentActions = Array.isArray(overrideValue) ? [...overrideValue] : [overrideValue]
+      } else if (defaultValue !== undefined) {
+        currentActions = Array.isArray(defaultValue) ? [...defaultValue] : [defaultValue]
+      } else {
+        // Key doesn't exist, nothing to do
+        return prev
+      }
+
+      // Remove the specific action
+      const remaining = currentActions.filter(a => a !== action)
+
+      if (remaining.length === 0) {
+        // No actions left - mark as removed if it was a default key
+        if (key in defaults) {
+          return { ...prev, [key]: '' }
+        } else {
+          const { [key]: _removed, ...rest } = prev
+          return rest
+        }
+      } else if (remaining.length === currentActions.length) {
+        // Action wasn't in the list, nothing changed
+        return prev
+      } else {
+        // Update with remaining actions
+        return { ...prev, [key]: remaining.length === 1 ? remaining[0] : remaining }
+      }
+    })
+  }, [defaults])
+
   const setKeymap = useCallback((newOverrides: Partial<HotkeyMap>) => {
     setOverrides((prev) => ({ ...prev, ...newOverrides }))
   }, [])
@@ -290,6 +333,7 @@ export function KeyboardShortcutsProvider({
       setBinding,
       addBinding,
       removeBinding,
+      removeBindingForAction,
       setKeymap,
       reset,
       overrides,
@@ -300,7 +344,7 @@ export function KeyboardShortcutsProvider({
       getCompletions,
       getBindingsForAction,
     }),
-    [defaults, keymap, actionsProp, setBinding, addBinding, removeBinding, setKeymap, reset, overrides, conflicts, hasConflictsValue, disableConflicts, searchActionsInContext, getCompletions, getBindingsForAction],
+    [defaults, keymap, actionsProp, setBinding, addBinding, removeBinding, removeBindingForAction, setKeymap, reset, overrides, conflicts, hasConflictsValue, disableConflicts, searchActionsInContext, getCompletions, getBindingsForAction],
   )
 
   return (
