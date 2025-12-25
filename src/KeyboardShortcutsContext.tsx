@@ -118,27 +118,11 @@ export function KeyboardShortcutsProvider({
       }
     }
 
-    // Log all relevant keys
-    const relevantKeys = ['n', 'N', '-']
-    const relevantDefaults = Object.fromEntries(Object.entries(defaults).filter(([k]) => relevantKeys.includes(k)))
-    const relevantEffective = Object.fromEntries(Object.entries(effectiveMap).filter(([k]) => relevantKeys.includes(k)))
-    console.log('keymap computed:', {
-      defaults: relevantDefaults,
-      overrides,
-      effective: relevantEffective,
-    })
-
     return effectiveMap as HotkeyMap
   }, [defaults, overrides])
 
   // Compute conflicts from current keymap
-  const conflicts = useMemo(() => {
-    const c = findConflicts(keymap)
-    if (c.size > 0) {
-      console.log('conflicts found:', Object.fromEntries(c))
-    }
-    return c
-  }, [keymap])
+  const conflicts = useMemo(() => findConflicts(keymap), [keymap])
   const hasConflictsValue = conflicts.size > 0
 
   // Action bindings map
@@ -163,12 +147,20 @@ export function KeyboardShortcutsProvider({
   )
 
   const setBinding = useCallback((action: string, key: string) => {
-    console.log('setBinding called:', { action, key })
     setOverrides((prev) => {
-      console.log('setBinding prev:', prev)
       const result: Partial<HotkeyMap> = {}
 
-      // Handle default keys that map to this action
+      // Helper to compare values (handles string vs array normalization)
+      const valuesEqual = (a: string | string[] | undefined, b: string | string[] | undefined): boolean => {
+        if (a === undefined && b === undefined) return true
+        if (a === undefined || b === undefined) return false
+        const arrA = Array.isArray(a) ? a : [a]
+        const arrB = Array.isArray(b) ? b : [b]
+        if (arrA.length !== arrB.length) return false
+        return arrA.every((v, i) => v === arrB[i])
+      }
+
+      // Handle default keys that map to this action - remove action from old keys
       for (const [k, v] of Object.entries(defaults)) {
         if (k === key) continue // Skip if it's the new key
         const defaultActions = Array.isArray(v) ? v : [v]
@@ -186,7 +178,7 @@ export function KeyboardShortcutsProvider({
 
       // Copy previous overrides, handling keys that map to this action
       for (const [k, v] of Object.entries(prev)) {
-        if (k === key) continue // Skip if it's the new key
+        if (k === key) continue // Skip if it's the new key (we'll handle it at the end)
         if (v === '' || v === undefined) {
           result[k] = v
           continue
@@ -209,10 +201,54 @@ export function KeyboardShortcutsProvider({
         }
       }
 
-      // Add the new binding
-      result[key] = action
-      console.log('setBinding result:', result)
-      return result
+      // Add the new binding - MERGE with existing actions for this key (allows conflicts)
+      // Get current actions for this key from defaults + previous overrides
+      const existingFromOverrides = prev[key]
+      const existingFromDefaults = defaults[key]
+
+      let currentActions: string[] = []
+      if (existingFromOverrides !== undefined) {
+        // Override takes precedence over defaults
+        if (existingFromOverrides !== '') {
+          currentActions = Array.isArray(existingFromOverrides)
+            ? [...existingFromOverrides]
+            : [existingFromOverrides]
+        }
+      } else if (existingFromDefaults !== undefined) {
+        // Fall back to defaults
+        currentActions = Array.isArray(existingFromDefaults)
+          ? [...existingFromDefaults]
+          : [existingFromDefaults]
+      }
+
+      // Add our action if not already present
+      if (!currentActions.includes(action)) {
+        currentActions.push(action)
+      }
+
+      // Set the merged result
+      result[key] = currentActions.length === 1 ? currentActions[0] : currentActions
+
+      // Canonicalize: remove entries that match defaults
+      const canonical: Partial<HotkeyMap> = {}
+      for (const [k, v] of Object.entries(result)) {
+        const defaultVal = defaults[k]
+        // Keep entry if:
+        // - It's a removal marker ('') for a default key
+        // - It differs from the default
+        // - It's for a key not in defaults
+        if (v === '') {
+          // Removal marker - only keep if key exists in defaults
+          if (k in defaults) {
+            canonical[k] = v
+          }
+        } else if (!valuesEqual(v, defaultVal)) {
+          canonical[k] = v
+        }
+        // If value equals default, don't include it (canonical form)
+      }
+
+      return canonical
     })
   }, [defaults])
 
