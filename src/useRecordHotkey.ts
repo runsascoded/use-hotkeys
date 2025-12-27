@@ -250,7 +250,14 @@ export function useRecordHotkey(options: RecordHotkeyOptions = {}): RecordHotkey
         return
       }
 
-      const key = e.key
+      // Use e.code when Alt is pressed (macOS transforms Alt+key into special chars)
+      // e.code gives physical key like "KeyH", extract the letter
+      let key = e.key
+      if (e.altKey && e.code.startsWith('Key')) {
+        key = e.code.slice(3).toLowerCase()
+      } else if (e.altKey && e.code.startsWith('Digit')) {
+        key = e.code.slice(5)
+      }
       pressedKeysRef.current.add(key)
 
       // Build current combination from pressed keys
@@ -292,7 +299,14 @@ export function useRecordHotkey(options: RecordHotkeyOptions = {}): RecordHotkey
         e.stopPropagation()
       }
 
-      pressedKeysRef.current.delete(e.key)
+      // Use same key extraction as keydown
+      let key = e.key
+      if (e.altKey && e.code.startsWith('Key')) {
+        key = e.code.slice(3).toLowerCase()
+      } else if (e.altKey && e.code.startsWith('Digit')) {
+        key = e.code.slice(5)
+      }
+      pressedKeysRef.current.delete(key)
 
       // On Mac, releasing Meta swallows other keyup events, so check if we have a valid
       // combination when Meta is released (or when all keys are released)
