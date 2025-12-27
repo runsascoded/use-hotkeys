@@ -998,7 +998,12 @@ function useRecordHotkey(options = {}) {
         onShiftTab();
         return;
       }
-      const key = e.key;
+      let key = e.key;
+      if (e.altKey && e.code.startsWith("Key")) {
+        key = e.code.slice(3).toLowerCase();
+      } else if (e.altKey && e.code.startsWith("Digit")) {
+        key = e.code.slice(5);
+      }
       pressedKeysRef.current.add(key);
       const combo = {
         key: "",
@@ -1031,7 +1036,13 @@ function useRecordHotkey(options = {}) {
         e.preventDefault();
         e.stopPropagation();
       }
-      pressedKeysRef.current.delete(e.key);
+      let key = e.key;
+      if (e.altKey && e.code.startsWith("Key")) {
+        key = e.code.slice(3).toLowerCase();
+      } else if (e.altKey && e.code.startsWith("Digit")) {
+        key = e.code.slice(5);
+      }
+      pressedKeysRef.current.delete(key);
       const shouldComplete = pressedKeysRef.current.size === 0 || e.key === "Meta" && hasNonModifierRef.current;
       if (shouldComplete && hasNonModifierRef.current && currentComboRef.current) {
         const combo = currentComboRef.current;
