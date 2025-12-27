@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Actions, RouteMatcher } from './actions'
 import type { HotkeySequence } from './types'
 import {
@@ -119,7 +119,7 @@ export interface HotkeysProviderProps {
   /** Configuration options */
   config?: HotkeysConfig
   /** Children */
-  children: React.ReactNode
+  children: ReactNode
 }
 
 /**
@@ -134,7 +134,7 @@ function HotkeysProviderInner({
   allActions: Actions
   externalHandlers?: Record<string, () => void>
   config: Required<HotkeysConfig>
-  children: React.ReactNode
+  children: ReactNode
 }) {
   const shortcutsContext = useKeyboardShortcutsContext()
 

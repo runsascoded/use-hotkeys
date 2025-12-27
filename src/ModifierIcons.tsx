@@ -1,18 +1,18 @@
-import React from 'react'
+import React, { type CSSProperties, type ComponentType } from 'react'
 
 export interface ModifierIconProps {
   className?: string
-  style?: React.CSSProperties
+  style?: CSSProperties
 }
 
-const baseStyle: React.CSSProperties = {
+const baseStyle: CSSProperties = {
   width: '1.2em',
   height: '1.2em',
   marginRight: '2px',
   verticalAlign: 'middle',
 }
 
-const wideStyle: React.CSSProperties = {
+const wideStyle: CSSProperties = {
   ...baseStyle,
   width: '1.4em',
 }
@@ -109,7 +109,7 @@ export type ModifierType = 'meta' | 'ctrl' | 'shift' | 'alt' | 'opt'
 export const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform)
 
 /** Get the appropriate icon component for a modifier key */
-export function getModifierIcon(modifier: ModifierType): React.ComponentType<ModifierIconProps> {
+export function getModifierIcon(modifier: ModifierType): ComponentType<ModifierIconProps> {
   switch (modifier) {
     case 'meta':
       return CommandIcon

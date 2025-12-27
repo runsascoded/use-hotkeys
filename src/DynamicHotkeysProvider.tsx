@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { ActionsRegistryContext, useActionsRegistry } from './ActionsRegistry'
 import type { ActionsRegistryValue } from './ActionsRegistry'
 import type { HotkeySequence } from './types'
@@ -89,7 +89,7 @@ const DEFAULT_CONFIG: Required<DynamicHotkeysConfig> = {
 
 export interface DynamicHotkeysProviderProps {
   config?: DynamicHotkeysConfig
-  children: React.ReactNode
+  children: ReactNode
 }
 
 /**

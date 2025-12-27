@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import {createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState} from 'react'
 import type { ActionRegistry, ActionSearchResult, HotkeySequence, SequenceCompletion } from './types'
 import { useHotkeys, HotkeyMap, HandlerMap, UseHotkeysOptions, UseHotkeysResult } from './useHotkeys'
 import { findConflicts, searchActions, getSequenceCompletions, getActionBindings } from './utils'
@@ -51,7 +51,7 @@ export interface KeyboardShortcutsProviderProps {
   storageKey?: string
   /** When true, keys with multiple actions bound are disabled (default: true) */
   disableConflicts?: boolean
-  children: React.ReactNode
+  children: ReactNode
 }
 
 /**

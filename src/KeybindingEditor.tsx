@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import {ReactNode, useCallback, useMemo, useState} from 'react'
 import type { HotkeyMap } from './useHotkeys'
 import type { HotkeySequence, KeyCombination, KeyCombinationDisplay } from './types'
 import { useRecordHotkey } from './useRecordHotkey'
@@ -18,7 +18,7 @@ export interface KeybindingEditorProps {
   /** CSS class for the container */
   className?: string
   /** Custom render function */
-  children?: (props: KeybindingEditorRenderProps) => React.ReactNode
+  children?: (props: KeybindingEditorRenderProps) => ReactNode
 }
 
 export interface KeybindingEditorRenderProps {

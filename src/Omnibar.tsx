@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
-import { getActionRegistry } from './actions'
-import { useMaybeHotkeysContext } from './HotkeysProvider'
-import type { ActionRegistry, ActionSearchResult, HotkeySequence, SequenceCompletion } from './types'
-import type { HandlerMap, HotkeyMap } from './useHotkeys'
-import { useOmnibar } from './useOmnibar'
-import { formatCombination, parseHotkeyString } from './utils'
-import { ModifierIcon } from './ModifierIcons'
+import {Fragment, KeyboardEvent, MouseEvent, ReactNode, RefObject, useCallback, useEffect, useMemo, useRef} from 'react'
+import {getActionRegistry} from './actions'
+import {useMaybeHotkeysContext} from './HotkeysProvider'
+import type {ActionRegistry, ActionSearchResult, HotkeySequence, SequenceCompletion} from './types'
+import type {HandlerMap, HotkeyMap} from './useHotkeys'
+import {useOmnibar} from './useOmnibar'
+import {parseHotkeyString} from './utils'
+import {ModifierIcon} from './ModifierIcons'
 
 export interface OmnibarProps {
   /**
@@ -52,7 +52,7 @@ export interface OmnibarProps {
   /** Placeholder text for input (default: 'Type a command...') */
   placeholder?: string
   /** Custom render function */
-  children?: (props: OmnibarRenderProps) => React.ReactNode
+  children?: (props: OmnibarRenderProps) => ReactNode
   /** CSS class for the backdrop */
   backdropClassName?: string
   /** CSS class for the omnibar container */
@@ -71,7 +71,7 @@ export interface OmnibarRenderProps {
   completions: SequenceCompletion[]
   pendingKeys: HotkeySequence
   isAwaitingSequence: boolean
-  inputRef: React.RefObject<HTMLInputElement | null>
+  inputRef: RefObject<HTMLInputElement | null>
 }
 
 /**
@@ -79,19 +79,18 @@ export interface OmnibarRenderProps {
  */
 function BindingBadge({ binding }: { binding: string }) {
   const sequence = parseHotkeyString(binding)
-  const display = formatCombination(sequence)
 
   return (
     <kbd className="hotkeys-kbd">
       {sequence.map((combo, i) => (
-        <React.Fragment key={i}>
+        <Fragment key={i}>
           {i > 0 && <span className="hotkeys-sequence-sep"> </span>}
           {combo.modifiers.meta && <ModifierIcon modifier="meta" className="hotkeys-modifier-icon" />}
           {combo.modifiers.ctrl && <ModifierIcon modifier="ctrl" className="hotkeys-modifier-icon" />}
           {combo.modifiers.alt && <ModifierIcon modifier="alt" className="hotkeys-modifier-icon" />}
           {combo.modifiers.shift && <ModifierIcon modifier="shift" className="hotkeys-modifier-icon" />}
           <span>{combo.key.length === 1 ? combo.key.toUpperCase() : combo.key}</span>
-        </React.Fragment>
+        </Fragment>
       ))}
     </kbd>
   )
@@ -146,7 +145,7 @@ export function Omnibar({
   const keymap = keymapProp ?? ctx?.keymap ?? {}
 
   // When using context, default enabled to false (HotkeysProvider handles the trigger)
-  const enabled = enabledProp ?? (ctx ? false : true)
+  const enabled = enabledProp ?? !ctx
 
   // Create execute handler that falls back to context
   const handleExecute = useCallback((actionId: string) => {
@@ -177,7 +176,6 @@ export function Omnibar({
 
   const {
     isOpen: internalIsOpen,
-    open,
     close,
     query,
     setQuery,
@@ -216,7 +214,7 @@ export function Omnibar({
 
   // Handle input keydown
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+    (e: KeyboardEvent) => {
       switch (e.key) {
         case 'Escape':
           e.preventDefault()
@@ -241,7 +239,7 @@ export function Omnibar({
 
   // Close on backdrop click
   const handleBackdropClick = useCallback(
-    (e: React.MouseEvent) => {
+    (e: MouseEvent) => {
       if (e.target === e.currentTarget) {
         close()
       }

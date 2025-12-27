@@ -138,10 +138,10 @@ import { createContext, useContext, useRef, useMemo } from 'react'
 import { HotkeysProvider } from '@rdub/use-hotkeys'
 import { createActions, type AwairCallbacks } from './hotkeyConfig'
 
-type CallbacksRef = React.MutableRefObject<Partial<AwairCallbacks>>
+type CallbacksRef = MutableRefObject<Partial<AwairCallbacks>>
 const AwairCallbacksContext = createContext<CallbacksRef | null>(null)
 
-export function AwairHotkeysProvider({ children }: { children: React.ReactNode }) {
+export function AwairHotkeysProvider({ children }: { children: ReactNode }) {
   const callbacksRef = useRef<Partial<AwairCallbacks>>({})
 
   // Create actions with delegates to ref

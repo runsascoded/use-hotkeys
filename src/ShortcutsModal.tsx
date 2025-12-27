@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import {Fragment, MouseEvent, ReactNode, useCallback, useEffect, useMemo, useState} from 'react'
 import { getActionRegistry } from './actions'
 import { useMaybeHotkeysContext } from './HotkeysProvider'
 import type { HotkeySequence, KeyCombination, KeyCombinationDisplay } from './types'
@@ -67,7 +67,7 @@ export interface ShortcutsModalProps {
   /** Whether to allow multiple bindings per action (default: true) */
   multipleBindings?: boolean
   /** Custom render function for the modal content */
-  children?: (props: ShortcutsModalRenderProps) => React.ReactNode
+  children?: (props: ShortcutsModalRenderProps) => ReactNode
   /** CSS class for the backdrop */
   backdropClassName?: string
   /** CSS class for the modal container */
@@ -167,7 +167,7 @@ function KeyDisplay({
   className?: string
 }) {
   const { key, modifiers } = combo
-  const parts: React.ReactNode[] = []
+  const parts: ReactNode[] = []
 
   if (modifiers.meta) {
     parts.push(<ModifierIcon key="meta" modifier="meta" className="hotkeys-modifier-icon" />)
@@ -232,15 +232,15 @@ function BindingDisplay({
 
   // Render editing state
   if (isEditing) {
-    let content: React.ReactNode
+    let content: ReactNode
     if (pendingKeys && pendingKeys.length > 0) {
       content = (
         <>
           {pendingKeys.map((combo, i) => (
-            <React.Fragment key={i}>
+            <Fragment key={i}>
               {i > 0 && <span className="hotkeys-sequence-sep"> </span>}
               <KeyDisplay combo={combo} />
-            </React.Fragment>
+            </Fragment>
           ))}
           {activeKeys && activeKeys.key && (
             <>
@@ -265,10 +265,10 @@ function BindingDisplay({
     <kbd className={kbdClassName} onClick={handleClick}>
       {display.isSequence ? (
         sequence.map((combo, i) => (
-          <React.Fragment key={i}>
+          <Fragment key={i}>
             {i > 0 && <span className="hotkeys-sequence-sep"> </span>}
             <KeyDisplay combo={combo} />
-          </React.Fragment>
+          </Fragment>
         ))
       ) : (
         <KeyDisplay combo={sequence[0]} />
@@ -377,7 +377,7 @@ export function ShortcutsModal({
   const groupNames = groupNamesProp ?? contextGroups
 
   // When using context, default autoRegisterOpen to false (HotkeysProvider handles it)
-  const shouldAutoRegisterOpen = autoRegisterOpen ?? (ctx ? false : true)
+  const shouldAutoRegisterOpen = autoRegisterOpen ?? !ctx
 
   const [internalIsOpen, setInternalIsOpen] = useState(false)
   // Use prop, then context, then internal state
@@ -525,7 +525,7 @@ export function ShortcutsModal({
 
   // Close on backdrop click
   const handleBackdropClick = useCallback(
-    (e: React.MouseEvent) => {
+    (e: MouseEvent) => {
       if (e.target === e.currentTarget) {
         close()
       }
@@ -580,7 +580,6 @@ export function ShortcutsModal({
 
             {group.shortcuts.map(({ actionId, label, description, bindings }) => {
               const isEditingThisAction = editingAction === actionId
-              const hasConflict = bindings.some((b) => conflicts.has(b) && (conflicts.get(b)?.length ?? 0) > 1)
 
               return (
                 <div key={actionId} className="hotkeys-action">
