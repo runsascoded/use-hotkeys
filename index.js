@@ -17,18 +17,21 @@ function useActionsRegistry(options = {}) {
       return {};
     }
   });
-  const updateOverrides = useCallback((newOverrides) => {
-    setOverrides(newOverrides);
-    if (storageKey && typeof window !== "undefined") {
-      try {
-        if (Object.keys(newOverrides).length === 0) {
-          localStorage.removeItem(storageKey);
-        } else {
-          localStorage.setItem(storageKey, JSON.stringify(newOverrides));
+  const updateOverrides = useCallback((update) => {
+    setOverrides((prev) => {
+      const newOverrides = typeof update === "function" ? update(prev) : update;
+      if (storageKey && typeof window !== "undefined") {
+        try {
+          if (Object.keys(newOverrides).length === 0) {
+            localStorage.removeItem(storageKey);
+          } else {
+            localStorage.setItem(storageKey, JSON.stringify(newOverrides));
+          }
+        } catch {
         }
-      } catch {
       }
-    }
+      return newOverrides;
+    });
   }, [storageKey]);
   const register = useCallback((id, config) => {
     actionsRef.current.set(id, {
@@ -49,22 +52,31 @@ function useActionsRegistry(options = {}) {
   }, []);
   const keymap = useMemo(() => {
     const map = {};
+    const addToKey = (key, actionId) => {
+      const existing = map[key];
+      if (existing) {
+        const existingArray = Array.isArray(existing) ? existing : [existing];
+        if (!existingArray.includes(actionId)) {
+          map[key] = [...existingArray, actionId];
+        }
+      } else {
+        map[key] = actionId;
+      }
+    };
     for (const [id, { config }] of actionsRef.current) {
       for (const binding of config.defaultBindings ?? []) {
-        if (overrides[binding] !== void 0) continue;
-        const existing = map[binding];
-        if (existing) {
-          map[binding] = Array.isArray(existing) ? [...existing, id] : [existing, id];
-        } else {
-          map[binding] = id;
-        }
+        if (overrides[binding] === "") continue;
+        addToKey(binding, id);
       }
     }
     for (const [key, actionOrActions] of Object.entries(overrides)) {
       if (actionOrActions === "") {
-        delete map[key];
+        continue;
       } else {
-        map[key] = actionOrActions;
+        const actions2 = Array.isArray(actionOrActions) ? actionOrActions : [actionOrActions];
+        for (const actionId of actions2) {
+          addToKey(key, actionId);
+        }
       }
     }
     return map;
@@ -91,21 +103,28 @@ function useActionsRegistry(options = {}) {
     return bindings;
   }, [keymap]);
   const setBinding = useCallback((actionId, key) => {
-    updateOverrides({
-      ...overrides,
+    updateOverrides((prev) => ({
+      ...prev,
       [key]: actionId
-    });
-  }, [overrides, updateOverrides]);
+    }));
+  }, [updateOverrides]);
   const removeBinding = useCallback((key) => {
-    const action = actionsRef.current.get(overrides[key]);
-    const isDefault = action?.config.defaultBindings?.includes(key);
-    if (isDefault) {
-      updateOverrides({ ...overrides, [key]: "" });
-    } else {
-      const { [key]: _, ...rest } = overrides;
-      updateOverrides(rest);
+    let isDefault = false;
+    for (const { config } of actionsRef.current.values()) {
+      if (config.defaultBindings?.includes(key)) {
+        isDefault = true;
+        break;
+      }
     }
-  }, [overrides, updateOverrides]);
+    updateOverrides((prev) => {
+      if (isDefault) {
+        return { ...prev, [key]: "" };
+      } else {
+        const { [key]: _, ...rest } = prev;
+        return rest;
+      }
+    });
+  }, [updateOverrides]);
   const resetOverrides = useCallback(() => {
     updateOverrides({});
   }, [updateOverrides]);
