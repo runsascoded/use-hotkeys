@@ -1088,6 +1088,34 @@ function useRecordHotkey(options = {}) {
   useEffect(() => {
     if (!isRecording) return;
     const handleKeyDown = (e) => {
+      if (e.key === "Tab") {
+        clearTimeout_();
+        const pendingSeq = [...pendingKeysRef.current];
+        if (hasNonModifierRef.current && currentComboRef.current) {
+          pendingSeq.push(currentComboRef.current);
+        }
+        pendingKeysRef.current = [];
+        setPendingKeys([]);
+        pressedKeysRef.current.clear();
+        hasNonModifierRef.current = false;
+        currentComboRef.current = null;
+        setActiveKeys(null);
+        setIsRecording(false);
+        if (pendingSeq.length > 0) {
+          const display2 = formatCombination(pendingSeq);
+          onCapture?.(pendingSeq, display2);
+        }
+        if (!e.shiftKey && onTab) {
+          e.preventDefault();
+          e.stopPropagation();
+          onTab();
+        } else if (e.shiftKey && onShiftTab) {
+          e.preventDefault();
+          e.stopPropagation();
+          onShiftTab();
+        }
+        return;
+      }
       if (preventDefault) {
         e.preventDefault();
         e.stopPropagation();
@@ -1104,44 +1132,6 @@ function useRecordHotkey(options = {}) {
       }
       if (e.key === "Escape") {
         cancel();
-        return;
-      }
-      if (e.key === "Tab" && !e.shiftKey && onTab) {
-        clearTimeout_();
-        const pendingSeq = [...pendingKeysRef.current];
-        if (hasNonModifierRef.current && currentComboRef.current) {
-          pendingSeq.push(currentComboRef.current);
-        }
-        pendingKeysRef.current = [];
-        setPendingKeys([]);
-        pressedKeysRef.current.clear();
-        hasNonModifierRef.current = false;
-        currentComboRef.current = null;
-        setActiveKeys(null);
-        if (pendingSeq.length > 0) {
-          const display2 = formatCombination(pendingSeq);
-          onCapture?.(pendingSeq, display2);
-        }
-        onTab();
-        return;
-      }
-      if (e.key === "Tab" && e.shiftKey && onShiftTab) {
-        clearTimeout_();
-        const pendingSeq = [...pendingKeysRef.current];
-        if (hasNonModifierRef.current && currentComboRef.current) {
-          pendingSeq.push(currentComboRef.current);
-        }
-        pendingKeysRef.current = [];
-        setPendingKeys([]);
-        pressedKeysRef.current.clear();
-        hasNonModifierRef.current = false;
-        currentComboRef.current = null;
-        setActiveKeys(null);
-        if (pendingSeq.length > 0) {
-          const display2 = formatCombination(pendingSeq);
-          onCapture?.(pendingSeq, display2);
-        }
-        onShiftTab();
         return;
       }
       let key = e.key;
