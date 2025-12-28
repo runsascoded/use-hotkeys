@@ -62,20 +62,24 @@ export function useActionsRegistry(options: UseActionsRegistryOptions = {}): Act
     }
   })
 
-  // Persist overrides
-  const updateOverrides = useCallback((newOverrides: Record<string, string | string[]>) => {
-    setOverrides(newOverrides)
-    if (storageKey && typeof window !== 'undefined') {
-      try {
-        if (Object.keys(newOverrides).length === 0) {
-          localStorage.removeItem(storageKey)
-        } else {
-          localStorage.setItem(storageKey, JSON.stringify(newOverrides))
+  // Persist overrides - accepts either a value or an updater function
+  type OverridesUpdate = Record<string, string | string[]> | ((prev: Record<string, string | string[]>) => Record<string, string | string[]>)
+  const updateOverrides = useCallback((update: OverridesUpdate) => {
+    setOverrides((prev) => {
+      const newOverrides = typeof update === 'function' ? update(prev) : update
+      if (storageKey && typeof window !== 'undefined') {
+        try {
+          if (Object.keys(newOverrides).length === 0) {
+            localStorage.removeItem(storageKey)
+          } else {
+            localStorage.setItem(storageKey, JSON.stringify(newOverrides))
+          }
+        } catch {
+          // Ignore storage errors
         }
-      } catch {
-        // Ignore storage errors
       }
-    }
+      return newOverrides
+    })
   }, [storageKey])
 
   const register = useCallback((id: string, config: ActionConfig) => {
@@ -102,29 +106,42 @@ export function useActionsRegistry(options: UseActionsRegistryOptions = {}): Act
   const keymap = useMemo(() => {
     const map: HotkeyMap = {}
 
-    // First, add all default bindings from registered actions
-    for (const [id, { config }] of actionsRef.current) {
-      for (const binding of config.defaultBindings ?? []) {
-        // Check if this binding has been overridden
-        if (overrides[binding] !== undefined) continue
-
-        const existing = map[binding]
-        if (existing) {
-          // Multiple actions on same key
-          map[binding] = Array.isArray(existing) ? [...existing, id] : [existing, id]
-        } else {
-          map[binding] = id
+    // Helper to add an action to a key (merging with existing)
+    const addToKey = (key: string, actionId: string) => {
+      const existing = map[key]
+      if (existing) {
+        // Multiple actions on same key - creates a conflict
+        const existingArray = Array.isArray(existing) ? existing : [existing]
+        if (!existingArray.includes(actionId)) {
+          map[key] = [...existingArray, actionId]
         }
+      } else {
+        map[key] = actionId
       }
     }
 
-    // Then apply user overrides
+    // First, add all default bindings from registered actions
+    // (but skip if explicitly removed via override)
+    for (const [id, { config }] of actionsRef.current) {
+      for (const binding of config.defaultBindings ?? []) {
+        // Check if this binding was explicitly removed
+        if (overrides[binding] === '') continue
+
+        addToKey(binding, id)
+      }
+    }
+
+    // Then apply user overrides (merge with defaults to create conflicts)
     for (const [key, actionOrActions] of Object.entries(overrides)) {
       if (actionOrActions === '') {
-        // Removed binding
-        delete map[key]
+        // Removed binding - already handled above
+        continue
       } else {
-        map[key] = actionOrActions
+        // Add the override binding (may merge with existing default)
+        const actions = Array.isArray(actionOrActions) ? actionOrActions : [actionOrActions]
+        for (const actionId of actions) {
+          addToKey(key, actionId)
+        }
       }
     }
 
@@ -161,25 +178,33 @@ export function useActionsRegistry(options: UseActionsRegistryOptions = {}): Act
   }, [keymap])
 
   const setBinding = useCallback((actionId: string, key: string) => {
-    updateOverrides({
-      ...overrides,
+    updateOverrides((prev) => ({
+      ...prev,
       [key]: actionId,
-    })
-  }, [overrides, updateOverrides])
+    }))
+  }, [updateOverrides])
 
   const removeBinding = useCallback((key: string) => {
-    const action = actionsRef.current.get(overrides[key] as string)
-    const isDefault = action?.config.defaultBindings?.includes(key)
-
-    if (isDefault) {
-      // Mark as explicitly removed
-      updateOverrides({ ...overrides, [key]: '' })
-    } else {
-      // Just remove the override
-      const { [key]: _, ...rest } = overrides
-      updateOverrides(rest)
+    // Check if this key is a default binding for any action
+    let isDefault = false
+    for (const { config } of actionsRef.current.values()) {
+      if (config.defaultBindings?.includes(key)) {
+        isDefault = true
+        break
+      }
     }
-  }, [overrides, updateOverrides])
+
+    updateOverrides((prev) => {
+      if (isDefault) {
+        // Mark as explicitly removed (set to '' in overrides)
+        return { ...prev, [key]: '' }
+      } else {
+        // Just remove from overrides
+        const { [key]: _, ...rest } = prev
+        return rest
+      }
+    })
+  }, [updateOverrides])
 
   const resetOverrides = useCallback(() => {
     updateOverrides({})
