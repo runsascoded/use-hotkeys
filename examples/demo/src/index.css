@@ -298,6 +298,19 @@ code {
   opacity: 0.6;
 }
 
+/* Custom kbd styling for Full Demo - red circle remove button */
+.todo-app .kbd-remove-btn {
+  background: var(--kbd-conflict);
+  color: white;
+  border-radius: 50%;
+  font-weight: bold;
+}
+
+.todo-app .kbd-remove-btn:hover {
+  background: #dc2626;
+  color: white;
+}
+
 /* Light mode */
 @media (prefers-color-scheme: light) {
   :root {

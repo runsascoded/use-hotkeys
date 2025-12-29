@@ -135,6 +135,7 @@
 
 /* === Kbd element === */
 .kbd-kbd {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 2px;
@@ -226,33 +227,35 @@
 
 /* === Remove binding button === */
 .kbd-remove-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
   background: none;
   border: none;
   padding: 0;
-  margin-left: 4px;
-  font-size: 0.75rem;
-  line-height: 1;
-  color: var(--kbd-conflict);
+  width: 14px;
+  height: 14px;
+  font-size: 12px;
+  line-height: 14px;
+  text-align: center;
+  color: var(--kbd-text-secondary);
   cursor: pointer;
-  /* Hidden by default - use width/max-width for smooth transition */
   opacity: 0;
-  max-width: 0;
-  overflow: hidden;
+  transform: scale(0.8);
   transition:
     opacity var(--kbd-transition),
-    max-width var(--kbd-transition),
-    margin var(--kbd-transition);
+    transform var(--kbd-transition),
+    color var(--kbd-transition);
 }
 
 .kbd-kbd:hover .kbd-remove-btn,
 .kbd-kbd:focus-within .kbd-remove-btn {
   opacity: 1;
-  max-width: 1em;
+  transform: scale(1);
 }
 
 .kbd-remove-btn:hover {
   color: var(--kbd-conflict);
-  transform: scale(1.1);
 }
 
 /* === Timeout bar === */
