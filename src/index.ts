@@ -19,7 +19,9 @@ export type {
   KeybindingEditorProps,
   KeybindingEditorRenderProps,
 } from './KeybindingEditor'
-export type { ShortcutGroup, ShortcutsModalProps, ShortcutsModalRenderProps } from './ShortcutsModal'
+export type { GroupRenderer, GroupRendererProps, ShortcutGroup, ShortcutsModalProps, ShortcutsModalRenderProps } from './ShortcutsModal'
+export type { TwoColumnConfig, TwoColumnRow } from './TwoColumnRenderer'
+export { createTwoColumnRenderer } from './TwoColumnRenderer'
 export type { OmnibarProps, OmnibarRenderProps } from './Omnibar'
 
 // HotkeysProvider (high-level integration with dynamic action registration)

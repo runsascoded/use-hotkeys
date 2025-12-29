@@ -110,6 +110,10 @@ export interface ShortcutsModalProps {
   backdropClassName?: string
   /** CSS class for the modal container */
   modalClassName?: string
+  /** Modal title (default: "Keyboard Shortcuts") */
+  title?: string
+  /** Hint text shown below title (e.g., "Click any key to customize") */
+  hint?: string
 }
 
 export interface ShortcutsModalRenderProps {
@@ -169,6 +173,11 @@ function organizeShortcuts(
     })
   }
 
+  // Sort shortcuts within each group by actionId
+  for (const group of groupMap.values()) {
+    group.shortcuts.sort((a, b) => a.actionId.localeCompare(b.actionId))
+  }
+
   // Sort groups
   const groups = Array.from(groupMap.values())
 
@@ -208,16 +217,16 @@ function KeyDisplay({
   const parts: ReactNode[] = []
 
   if (modifiers.meta) {
-    parts.push(<ModifierIcon key="meta" modifier="meta" className="hotkeys-modifier-icon" />)
+    parts.push(<ModifierIcon key="meta" modifier="meta" className="kbd-modifier-icon" />)
   }
   if (modifiers.ctrl) {
-    parts.push(<ModifierIcon key="ctrl" modifier="ctrl" className="hotkeys-modifier-icon" />)
+    parts.push(<ModifierIcon key="ctrl" modifier="ctrl" className="kbd-modifier-icon" />)
   }
   if (modifiers.alt) {
-    parts.push(<ModifierIcon key="alt" modifier="alt" className="hotkeys-modifier-icon" />)
+    parts.push(<ModifierIcon key="alt" modifier="alt" className="kbd-modifier-icon" />)
   }
   if (modifiers.shift) {
-    parts.push(<ModifierIcon key="shift" modifier="shift" className="hotkeys-modifier-icon" />)
+    parts.push(<ModifierIcon key="shift" modifier="shift" className="kbd-modifier-icon" />)
   }
 
   // Display key (uppercase for single chars)
@@ -258,8 +267,8 @@ function BindingDisplay({
   const sequence = parseHotkeyString(binding)
   const display = formatCombination(sequence)
 
-  let kbdClassName = 'hotkeys-kbd'
-  if (editable) kbdClassName += ' editable'
+  let kbdClassName = 'kbd-kbd'
+  if (editable && !isEditing) kbdClassName += ' editable'
   if (isEditing) kbdClassName += ' editing'
   if (isConflict) kbdClassName += ' conflict'
   if (isPendingConflict) kbdClassName += ' pending-conflict'
@@ -276,13 +285,13 @@ function BindingDisplay({
         <>
           {pendingKeys.map((combo, i) => (
             <Fragment key={i}>
-              {i > 0 && <span className="hotkeys-sequence-sep"> </span>}
+              {i > 0 && <span className="kbd-sequence-sep"> </span>}
               <KeyDisplay combo={combo} />
             </Fragment>
           ))}
           {activeKeys && activeKeys.key && (
             <>
-              <span className="hotkeys-sequence-sep"> → </span>
+              <span className="kbd-sequence-sep"> → </span>
               <KeyDisplay combo={activeKeys} />
             </>
           )}
@@ -292,19 +301,19 @@ function BindingDisplay({
     } else if (activeKeys && activeKeys.key) {
       content = <><KeyDisplay combo={activeKeys} /><span>...</span></>
     } else {
-      content = 'Press keys...'
+      content = '...'
     }
 
-    return <kbd className={kbdClassName}>{content}</kbd>
+    return <kbd className={kbdClassName} tabIndex={editable ? 0 : undefined}>{content}</kbd>
   }
 
   // Render normal binding
   return (
-    <kbd className={kbdClassName} onClick={handleClick}>
+    <kbd className={kbdClassName} onClick={handleClick} tabIndex={editable ? 0 : undefined} onKeyDown={editable && onEdit ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onEdit() } } : undefined}>
       {display.isSequence ? (
         sequence.map((combo, i) => (
           <Fragment key={i}>
-            {i > 0 && <span className="hotkeys-sequence-sep"> </span>}
+            {i > 0 && <span className="kbd-sequence-sep"> </span>}
             <KeyDisplay combo={combo} />
           </Fragment>
         ))
@@ -313,7 +322,7 @@ function BindingDisplay({
       )}
       {editable && onRemove && (
         <button
-          className="hotkeys-remove-btn"
+          className="kbd-remove-btn"
           onClick={(e) => { e.stopPropagation(); onRemove() }}
           aria-label="Remove binding"
         >
@@ -328,7 +337,7 @@ function BindingDisplay({
  * Modal component for displaying and optionally editing keyboard shortcuts.
  *
  * Uses CSS classes from styles.css. Override via CSS custom properties:
- * --hotkeys-bg, --hotkeys-text, --hotkeys-kbd-bg, etc.
+ * --kbd-bg, --kbd-text, --kbd-kbd-bg, etc.
  *
  * @example
  * ```tsx
@@ -368,8 +377,10 @@ export function ShortcutsModal({
   onReset,
   multipleBindings = true,
   children,
-  backdropClassName = 'hotkeys-backdrop',
-  modalClassName = 'hotkeys-modal',
+  backdropClassName = 'kbd-backdrop',
+  modalClassName = 'kbd-modal',
+  title = 'Keyboard Shortcuts',
+  hint,
 }: ShortcutsModalProps) {
   // Try to get context (returns null if not within HotkeysProvider)
   const ctx = useMaybeHotkeysContext()
@@ -415,6 +426,21 @@ export function ShortcutsModal({
   const labels = labelsProp ?? contextLabels
   const descriptions = descriptionsProp ?? contextDescriptions
   const groupNames = groupNamesProp ?? contextGroups
+
+  // Editing callbacks - fall back to context registry if not provided
+  const handleBindingChange = onBindingChange ?? (ctx ? (action, oldKey, newKey) => {
+    if (oldKey) ctx.registry.removeBinding(oldKey)
+    ctx.registry.setBinding(action, newKey)
+  } : undefined)
+  const handleBindingAdd = onBindingAdd ?? (ctx ? (action, key) => {
+    ctx.registry.setBinding(action, key)
+  } : undefined)
+  const handleBindingRemove = onBindingRemove ?? (ctx ? (_action, key) => {
+    ctx.registry.removeBinding(key)
+  } : undefined)
+  const handleReset = onReset ?? (ctx ? () => {
+    ctx.registry.resetOverrides()
+  } : undefined)
 
   // When using context, default autoRegisterOpen to false (HotkeysProvider handles it)
   const shouldAutoRegisterOpen = autoRegisterOpen ?? !ctx
@@ -501,10 +527,10 @@ export function ShortcutsModal({
 
         if (currentAddingAction) {
           // Adding new binding
-          onBindingAdd?.(currentAddingAction, display.id)
+          handleBindingAdd?.(currentAddingAction, display.id)
         } else if (currentEditingAction && currentEditingKey) {
           // Replacing existing binding
-          onBindingChange?.(currentEditingAction, currentEditingKey, display.id)
+          handleBindingChange?.(currentEditingAction, currentEditingKey, display.id)
         }
 
         // Clear state
@@ -515,7 +541,7 @@ export function ShortcutsModal({
         setEditingKey(null)
         setAddingAction(null)
       },
-      [checkConflict, onBindingChange, onBindingAdd],
+      [checkConflict, handleBindingChange, handleBindingAdd],
     ),
     onCancel: useCallback(() => {
       editingActionRef.current = null
@@ -525,6 +551,30 @@ export function ShortcutsModal({
       setEditingKey(null)
       setAddingAction(null)
       setPendingConflict(null)
+    }, []),
+    // Tab to next/prev editable kbd and start editing
+    onTab: useCallback(() => {
+      // Find all editable kbd elements
+      const editables = Array.from(document.querySelectorAll('.kbd-kbd.editable, .kbd-kbd.editing'))
+      const current = document.querySelector('.kbd-kbd.editing')
+      const currentIndex = current ? editables.indexOf(current) : -1
+      const nextIndex = (currentIndex + 1) % editables.length
+      const next = editables[nextIndex] as HTMLElement
+      if (next) {
+        next.focus()
+        next.click()
+      }
+    }, []),
+    onShiftTab: useCallback(() => {
+      const editables = Array.from(document.querySelectorAll('.kbd-kbd.editable, .kbd-kbd.editing'))
+      const current = document.querySelector('.kbd-kbd.editing')
+      const currentIndex = current ? editables.indexOf(current) : -1
+      const prevIndex = currentIndex <= 0 ? editables.length - 1 : currentIndex - 1
+      const prev = editables[prevIndex] as HTMLElement
+      if (prev) {
+        prev.focus()
+        prev.click()
+      }
     }, []),
     pauseTimeout: pendingConflict !== null,
   })
@@ -589,14 +639,14 @@ export function ShortcutsModal({
 
   const removeBinding = useCallback(
     (action: string, key: string) => {
-      onBindingRemove?.(action, key)
+      handleBindingRemove?.(action, key)
     },
-    [onBindingRemove],
+    [handleBindingRemove],
   )
 
   const reset = useCallback(() => {
-    onReset?.()
-  }, [onReset])
+    handleReset?.()
+  }, [handleReset])
 
   // Helper: render a single editable kbd element
   const renderEditableKbd = useCallback(
@@ -649,7 +699,7 @@ export function ShortcutsModal({
 
       return (
         <button
-          className="hotkeys-add-btn"
+          className="kbd-add-btn"
           onClick={() => startAddingBinding(actionId)}
           disabled={isRecording && !isAddingThis}
         >
@@ -664,7 +714,7 @@ export function ShortcutsModal({
   const renderCell = useCallback(
     (actionId: string, keys: string[]) => {
       return (
-        <span className="hotkeys-action-bindings">
+        <span className="kbd-action-bindings">
           {keys.map((key) => (
             <Fragment key={key}>
               {renderEditableKbd(actionId, key, true)}
@@ -728,6 +778,22 @@ export function ShortcutsModal({
     [close],
   )
 
+  // Cancel editing when clicking outside the editing element
+  const handleModalClick = useCallback(
+    (e: MouseEvent) => {
+      if (!editingAction && !addingAction) return
+      const target = e.target as HTMLElement
+      // If click is on or inside an editing kbd, don't cancel
+      if (target.closest('.kbd-kbd.editing')) return
+      // If click is on another editable kbd, don't cancel (it will start its own editing)
+      if (target.closest('.kbd-kbd.editable')) return
+      // If click is on add button, don't cancel (it will start its own editing)
+      if (target.closest('.kbd-add-btn')) return
+      cancelEditing()
+    },
+    [editingAction, addingAction, cancelEditing],
+  )
+
   // Organize shortcuts into groups
   const shortcutGroups = useMemo(
     () => organizeShortcuts(keymap, labels, descriptions, groupNames, groupOrder),
@@ -768,8 +834,8 @@ export function ShortcutsModal({
 
     // Default single-column rendering
     return group.shortcuts.map(({ actionId, label, description, bindings }) => (
-      <div key={actionId} className="hotkeys-action">
-        <span className="hotkeys-action-label" title={description}>
+      <div key={actionId} className="kbd-action">
+        <span className="kbd-action-label" title={description}>
           {label}
         </span>
         {renderCell(actionId, bindings)}
@@ -780,31 +846,40 @@ export function ShortcutsModal({
   // Default render
   return (
     <div className={backdropClassName} onClick={handleBackdropClick}>
-      <div className={modalClassName} role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
-        <div className="hotkeys-modal-header">
-          <h2 className="hotkeys-modal-title">Keyboard Shortcuts</h2>
-          <button className="hotkeys-modal-close" onClick={close} aria-label="Close">
-            ×
-          </button>
+      <div className={modalClassName} role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" onClick={handleModalClick}>
+        <div className="kbd-modal-header">
+          <h2 className="kbd-modal-title">{title}</h2>
+          <div className="kbd-modal-header-buttons">
+            {editable && handleReset && (
+              <button className="kbd-reset-btn" onClick={reset}>
+                Reset
+              </button>
+            )}
+            <button className="kbd-modal-close" onClick={close} aria-label="Close">
+              ×
+            </button>
+          </div>
         </div>
 
+        {hint && <p className="kbd-hint">{hint}</p>}
+
         {shortcutGroups.map((group) => (
-          <div key={group.name} className="hotkeys-group">
-            <h3 className="hotkeys-group-title">{group.name}</h3>
+          <div key={group.name} className="kbd-group">
+            <h3 className="kbd-group-title">{group.name}</h3>
             {renderGroup(group)}
           </div>
         ))}
 
         {/* Pending conflict warning */}
         {pendingConflict && (
-          <div className="hotkeys-conflict-warning" style={{
+          <div className="kbd-conflict-warning" style={{
             padding: '12px',
             marginTop: '16px',
-            backgroundColor: 'var(--hk-warning-bg)',
-            borderRadius: 'var(--hk-radius-sm)',
-            border: '1px solid var(--hk-warning)',
+            backgroundColor: 'var(--kbd-warning-bg)',
+            borderRadius: 'var(--kbd-radius-sm)',
+            border: '1px solid var(--kbd-warning)',
           }}>
-            <p style={{ margin: '0 0 8px', color: 'var(--hk-warning)' }}>
+            <p style={{ margin: '0 0 8px', color: 'var(--kbd-warning)' }}>
               This key is already bound to: {pendingConflict.conflictsWith.join(', ')}
             </p>
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -812,9 +887,9 @@ export function ShortcutsModal({
                 onClick={() => {
                   // Accept and override
                   if (addingActionRef.current) {
-                    onBindingAdd?.(pendingConflict.action, pendingConflict.key)
+                    handleBindingAdd?.(pendingConflict.action, pendingConflict.key)
                   } else if (editingKeyRef.current) {
-                    onBindingChange?.(pendingConflict.action, editingKeyRef.current, pendingConflict.key)
+                    handleBindingChange?.(pendingConflict.action, editingKeyRef.current, pendingConflict.key)
                   }
                   editingActionRef.current = null
                   editingKeyRef.current = null
@@ -826,10 +901,10 @@ export function ShortcutsModal({
                 }}
                 style={{
                   padding: '4px 12px',
-                  backgroundColor: 'var(--hk-accent)',
+                  backgroundColor: 'var(--kbd-accent)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: 'var(--hk-radius-sm)',
+                  borderRadius: 'var(--kbd-radius-sm)',
                   cursor: 'pointer',
                 }}
               >
@@ -839,9 +914,9 @@ export function ShortcutsModal({
                 onClick={cancelEditing}
                 style={{
                   padding: '4px 12px',
-                  backgroundColor: 'var(--hk-bg-secondary)',
-                  border: '1px solid var(--hk-border)',
-                  borderRadius: 'var(--hk-radius-sm)',
+                  backgroundColor: 'var(--kbd-bg-secondary)',
+                  border: '1px solid var(--kbd-border)',
+                  borderRadius: 'var(--kbd-radius-sm)',
                   cursor: 'pointer',
                 }}
               >
@@ -851,24 +926,6 @@ export function ShortcutsModal({
           </div>
         )}
 
-        {/* Reset button */}
-        {editable && onReset && (
-          <div style={{ marginTop: '16px', textAlign: 'right' }}>
-            <button
-              onClick={reset}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: 'var(--hk-bg-secondary)',
-                border: '1px solid var(--hk-border)',
-                borderRadius: 'var(--hk-radius-sm)',
-                cursor: 'pointer',
-                color: 'var(--hk-text)',
-              }}
-            >
-              Reset to defaults
-            </button>
-          </div>
-        )}
       </div>
     </div>
   )
