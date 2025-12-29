@@ -37,12 +37,12 @@ export function Home() {
           <h2><Link to="/routes">Route-based Demo</Link></h2>
           <p>
             Demonstrates different hotkeys on different routes.
-            Navigation with sub-routes, each with their own action set.
+            Uses <code>sequenceTimeout: Infinity</code> (no auto-submit).
           </p>
           <ul>
             <li>Route-specific actions</li>
             <li>Shared global actions</li>
-            <li>Dynamic action registration</li>
+            <li>Manual sequence commit (Enter/Tab)</li>
           </ul>
         </section>
       </div>

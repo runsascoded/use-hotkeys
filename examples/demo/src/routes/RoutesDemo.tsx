@@ -57,7 +57,7 @@ function RoutesHome() {
   return (
     <div className="route-demo">
       <h2>Routes Demo - Home</h2>
-      <p>This demonstrates route-specific hotkeys. Global hotkeys work everywhere:</p>
+      <p>This demonstrates route-specific hotkeys with <code>sequenceTimeout: Infinity</code> (no auto-submit; press Enter/Tab to commit). Global hotkeys work everywhere:</p>
       <ul>
         <li><kbd>?</kbd> - Show shortcuts</li>
         <li><kbd>G H</kbd> - Go to Home</li>
@@ -314,7 +314,7 @@ export function RoutesDemo() {
     <HotkeysProvider
       config={{
         storageKey: 'use-kbd-demo-routes',
-        sequenceTimeout: 1000,
+        sequenceTimeout: Infinity,
       }}
     >
       <RoutesContent />
