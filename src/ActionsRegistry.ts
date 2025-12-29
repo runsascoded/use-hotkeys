@@ -250,11 +250,29 @@ export function useActionsRegistry(options: UseActionsRegistryOptions = {}): Act
   }, [keymap])
 
   const setBinding = useCallback((actionId: string, key: string) => {
-    updateOverrides((prev) => ({
-      ...prev,
-      [key]: actionId,
-    }))
-  }, [updateOverrides])
+    // If this binding is a default for this action, just remove it from removedDefaults
+    // (no need to store in overrides since it will come from defaults)
+    if (isDefaultBinding(key, actionId)) {
+      updateRemovedDefaults((prev) => {
+        const existing = prev[actionId] ?? []
+        if (existing.includes(key)) {
+          const filtered = existing.filter(k => k !== key)
+          if (filtered.length === 0) {
+            const { [actionId]: _, ...rest } = prev
+            return rest
+          }
+          return { ...prev, [actionId]: filtered }
+        }
+        return prev
+      })
+    } else {
+      // Non-default binding - add to overrides
+      updateOverrides((prev) => ({
+        ...prev,
+        [key]: actionId,
+      }))
+    }
+  }, [updateOverrides, updateRemovedDefaults, isDefaultBinding])
 
   const removeBinding = useCallback((key: string) => {
     // Find which actions have this as a default binding

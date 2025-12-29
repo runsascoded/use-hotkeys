@@ -2,9 +2,10 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Full Demo - Sequences and Editing', () => {
   test.beforeEach(async ({ page }) => {
-    // Clear localStorage
+    // Clear localStorage (both overrides and removed defaults)
     await page.addInitScript(() => {
       localStorage.removeItem('use-kbd-demo-full')
+      localStorage.removeItem('use-kbd-demo-full-removed')
     })
     await page.goto('/full')
   })
@@ -115,12 +116,97 @@ test.describe('Full Demo - Sequences and Editing', () => {
     // Should show the new key
     await expect(page.locator('.kbd-kbd', { hasText: 'Q' })).toBeVisible()
   })
+
+  test('can re-add a default binding after removing it', async ({ page }) => {
+    await page.locator('body').click({ position: { x: 10, y: 10 } })
+
+    // Open modal
+    await page.keyboard.press('?')
+    await page.waitForSelector('.kbd-modal', { timeout: 5000 })
+
+    // Find the "Due in 1 day" action which has default binding "1 D"
+    const dueAction = page.locator('.kbd-action', { hasText: 'Due in 1 day' })
+    const dueKbd = dueAction.locator('.kbd-kbd.editable').first()
+    await expect(dueKbd).toBeVisible()
+
+    // Add a new binding "x"
+    const addBtn = dueAction.locator('.kbd-add-btn')
+    await addBtn.click()
+    await page.waitForTimeout(100)
+    await page.keyboard.press('x')
+    await page.waitForTimeout(1200)
+
+    // Should now have two bindings
+    await expect(dueAction.locator('.kbd-kbd.editable')).toHaveCount(2)
+
+    // Remove the original "1 D" binding by hovering and clicking x
+    const originalKbd = dueAction.locator('.kbd-kbd.editable', { hasText: '1' }).first()
+    await originalKbd.hover()
+    const removeBtn = originalKbd.locator('.kbd-remove-btn')
+    await removeBtn.click()
+    await page.waitForTimeout(200)
+
+    // Should now have only "X" binding
+    await expect(dueAction.locator('.kbd-kbd.editable')).toHaveCount(1)
+    await expect(dueAction.locator('.kbd-kbd.editable', { hasText: 'X' })).toBeVisible()
+
+    // Re-add the original binding "1 d"
+    const addBtn2 = dueAction.locator('.kbd-add-btn')
+    await addBtn2.click()
+    await page.waitForTimeout(100)
+    await page.keyboard.press('1')
+    await page.waitForTimeout(100)
+    await page.keyboard.press('d')
+    await page.waitForTimeout(1200)
+
+    // Should now have both bindings again
+    await expect(dueAction.locator('.kbd-kbd.editable')).toHaveCount(2)
+    await expect(dueAction.locator('.kbd-kbd.editable', { hasText: '1' })).toBeVisible()
+    await expect(dueAction.locator('.kbd-kbd.editable', { hasText: 'X' })).toBeVisible()
+  })
+
+  test('action with no bindings still shows in modal with add button', async ({ page }) => {
+    await page.locator('body').click({ position: { x: 10, y: 10 } })
+
+    // Open modal
+    await page.keyboard.press('?')
+    await page.waitForSelector('.kbd-modal', { timeout: 5000 })
+
+    // Find an action and remove all its bindings
+    const editAction = page.locator('.kbd-action', { hasText: 'Edit' })
+    const editKbd = editAction.locator('.kbd-kbd.editable').first()
+    await expect(editKbd).toBeVisible()
+
+    // Remove the binding
+    await editKbd.hover()
+    const removeBtn = editKbd.locator('.kbd-remove-btn')
+    await removeBtn.click()
+    await page.waitForTimeout(200)
+
+    // Action should still be visible with add button
+    await expect(editAction).toBeVisible()
+    await expect(editAction.locator('.kbd-add-btn')).toBeVisible()
+
+    // Should have no kbd elements
+    await expect(editAction.locator('.kbd-kbd.editable')).toHaveCount(0)
+
+    // Can add a new binding
+    const addBtn = editAction.locator('.kbd-add-btn')
+    await addBtn.click()
+    await page.waitForTimeout(100)
+    await page.keyboard.press('z')
+    await page.waitForTimeout(1200)
+
+    // Should have the new binding
+    await expect(editAction.locator('.kbd-kbd.editable', { hasText: 'Z' })).toBeVisible()
+  })
 })
 
 test.describe('Simple Demo - Immediate Response', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.removeItem('use-kbd-demo-simple')
+      localStorage.removeItem('use-kbd-demo-simple-removed')
     })
     await page.goto('/simple')
   })
@@ -162,6 +248,7 @@ test.describe('Routes Demo - Route-specific Hotkeys', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.removeItem('use-kbd-demo-routes')
+      localStorage.removeItem('use-kbd-demo-routes-removed')
     })
   })
 

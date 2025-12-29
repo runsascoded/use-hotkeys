@@ -4,7 +4,7 @@ import { ModifierIcon } from './ModifierIcons'
 import { useHotkeys } from './useHotkeys'
 import { useRecordHotkey } from './useRecordHotkey'
 import { findConflicts, formatCombination, getActionBindings, parseHotkeyString } from './utils'
-import type { HotkeySequence, KeyCombination, KeyCombinationDisplay } from './types'
+import type { ActionRegistry, HotkeySequence, KeyCombination, KeyCombinationDisplay } from './types'
 import type { HotkeyMap } from './useHotkeys'
 
 export interface ShortcutGroup {
@@ -145,6 +145,7 @@ function parseActionId(actionId: string): { group: string; name: string } {
 
 /**
  * Organize keymap into groups for display.
+ * Also includes actions with no bindings (from registry) so they can be assigned.
  */
 function organizeShortcuts(
   keymap: HotkeyMap,
@@ -152,12 +153,15 @@ function organizeShortcuts(
   descriptions?: Record<string, string>,
   groupNames?: Record<string, string>,
   groupOrder?: string[],
+  actionRegistry?: ActionRegistry,
 ): ShortcutGroup[] {
   // Build action -> bindings map
   const actionBindings = getActionBindings(keymap)
   const groupMap = new Map<string, ShortcutGroup>()
+  const includedActions = new Set<string>()
 
   for (const [actionId, bindings] of actionBindings) {
+    includedActions.add(actionId)
     const { group: groupKey, name } = parseActionId(actionId)
     const groupName = groupNames?.[groupKey] ?? groupKey
 
@@ -171,6 +175,27 @@ function organizeShortcuts(
       description: descriptions?.[actionId],
       bindings,
     })
+  }
+
+  // Add actions from registry that have no bindings
+  if (actionRegistry) {
+    for (const [actionId, action] of Object.entries(actionRegistry)) {
+      if (includedActions.has(actionId)) continue
+
+      const { group: groupKey, name } = parseActionId(actionId)
+      const groupName = action.group ?? groupNames?.[groupKey] ?? groupKey
+
+      if (!groupMap.has(groupName)) {
+        groupMap.set(groupName, { name: groupName, shortcuts: [] })
+      }
+
+      groupMap.get(groupName)!.shortcuts.push({
+        actionId,
+        label: labels?.[actionId] ?? action.label ?? name,
+        description: descriptions?.[actionId],
+        bindings: [], // No bindings
+      })
+    }
   }
 
   // Sort shortcuts within each group by actionId
@@ -828,10 +853,10 @@ export function ShortcutsModal({
     [editingAction, addingAction, cancelEditing],
   )
 
-  // Organize shortcuts into groups
+  // Organize shortcuts into groups (include actionRegistry to show actions with no bindings)
   const shortcutGroups = useMemo(
-    () => organizeShortcuts(keymap, labels, descriptions, groupNames, groupOrder),
-    [keymap, labels, descriptions, groupNames, groupOrder],
+    () => organizeShortcuts(keymap, labels, descriptions, groupNames, groupOrder, ctx?.registry.actionRegistry),
+    [keymap, labels, descriptions, groupNames, groupOrder, ctx?.registry.actionRegistry],
   )
 
   if (!isOpen) return null
