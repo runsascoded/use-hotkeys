@@ -80,14 +80,14 @@ function BindingBadge({ binding }: { binding: string }) {
   const sequence = parseHotkeyString(binding)
 
   return (
-    <kbd className="hotkeys-kbd">
+    <kbd className="kbd-kbd">
       {sequence.map((combo, i) => (
         <Fragment key={i}>
-          {i > 0 && <span className="hotkeys-sequence-sep"> </span>}
-          {combo.modifiers.meta && <ModifierIcon modifier="meta" className="hotkeys-modifier-icon" />}
-          {combo.modifiers.ctrl && <ModifierIcon modifier="ctrl" className="hotkeys-modifier-icon" />}
-          {combo.modifiers.alt && <ModifierIcon modifier="alt" className="hotkeys-modifier-icon" />}
-          {combo.modifiers.shift && <ModifierIcon modifier="shift" className="hotkeys-modifier-icon" />}
+          {i > 0 && <span className="kbd-sequence-sep"> </span>}
+          {combo.modifiers.meta && <ModifierIcon modifier="meta" className="kbd-modifier-icon" />}
+          {combo.modifiers.ctrl && <ModifierIcon modifier="ctrl" className="kbd-modifier-icon" />}
+          {combo.modifiers.alt && <ModifierIcon modifier="alt" className="kbd-modifier-icon" />}
+          {combo.modifiers.shift && <ModifierIcon modifier="shift" className="kbd-modifier-icon" />}
           <span>{combo.key.length === 1 ? combo.key.toUpperCase() : combo.key}</span>
         </Fragment>
       ))}
@@ -99,7 +99,7 @@ function BindingBadge({ binding }: { binding: string }) {
  * Omnibar/command palette component for searching and executing actions.
  *
  * Uses CSS classes from styles.css. Override via CSS custom properties:
- * --hotkeys-bg, --hotkeys-text, --hotkeys-accent, etc.
+ * --kbd-bg, --kbd-text, --kbd-accent, etc.
  *
  * @example
  * ```tsx
@@ -124,8 +124,8 @@ export function Omnibar({
   maxResults = 10,
   placeholder = 'Type a command...',
   children,
-  backdropClassName = 'hotkeys-omnibar-backdrop',
-  omnibarClassName = 'hotkeys-omnibar',
+  backdropClassName = 'kbd-omnibar-backdrop',
+  omnibarClassName = 'kbd-omnibar',
 }: OmnibarProps) {
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -270,7 +270,7 @@ export function Omnibar({
         <input
           ref={inputRef}
           type="text"
-          className="hotkeys-omnibar-input"
+          className="kbd-omnibar-input"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -281,29 +281,29 @@ export function Omnibar({
           spellCheck={false}
         />
 
-        <div className="hotkeys-omnibar-results">
+        <div className="kbd-omnibar-results">
           {results.length === 0 ? (
-            <div className="hotkeys-omnibar-no-results">
+            <div className="kbd-omnibar-no-results">
               {query ? 'No matching commands' : 'Start typing to search commands...'}
             </div>
           ) : (
             results.map((result, i) => (
               <div
                 key={result.id}
-                className={`hotkeys-omnibar-result ${i === selectedIndex ? 'selected' : ''}`}
+                className={`kbd-omnibar-result ${i === selectedIndex ? 'selected' : ''}`}
                 onClick={() => execute(result.id)}
                 onMouseEnter={() => {/* Could set selectedIndex here for hover selection */}}
               >
-                <span className="hotkeys-omnibar-result-label">
+                <span className="kbd-omnibar-result-label">
                   {result.action.label}
                 </span>
                 {result.action.group && (
-                  <span className="hotkeys-omnibar-result-category">
+                  <span className="kbd-omnibar-result-category">
                     {result.action.group}
                   </span>
                 )}
                 {result.bindings.length > 0 && (
-                  <div className="hotkeys-omnibar-result-bindings">
+                  <div className="kbd-omnibar-result-bindings">
                     {result.bindings.slice(0, 2).map((binding) => (
                       <BindingBadge key={binding} binding={binding} />
                     ))}

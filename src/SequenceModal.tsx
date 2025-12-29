@@ -53,18 +53,18 @@ export function SequenceModal() {
   }
 
   return (
-    <div className="hotkeys-sequence-backdrop">
-      <div className="hotkeys-sequence">
+    <div className="kbd-sequence-backdrop">
+      <div className="kbd-sequence">
         {/* Current sequence at top */}
-        <div className="hotkeys-sequence-current">
-          <kbd className="hotkeys-sequence-keys">{formattedPendingKeys}</kbd>
-          <span className="hotkeys-sequence-ellipsis">…</span>
+        <div className="kbd-sequence-current">
+          <kbd className="kbd-sequence-keys">{formattedPendingKeys}</kbd>
+          <span className="kbd-sequence-ellipsis">…</span>
         </div>
 
         {/* Timeout progress bar */}
         {timeoutStartedAt && (
           <div
-            className="hotkeys-sequence-timeout"
+            className="kbd-sequence-timeout"
             key={timeoutStartedAt}
             style={{ animationDuration: `${sequenceTimeout}ms` }}
           />
@@ -72,12 +72,12 @@ export function SequenceModal() {
 
         {/* Completions list */}
         {completions.length > 0 && (
-          <div className="hotkeys-sequence-completions">
+          <div className="kbd-sequence-completions">
             {Array.from(groupedCompletions.entries()).map(([nextKey, comps]) => (
-              <div key={nextKey} className="hotkeys-sequence-completion">
-                <kbd className="hotkeys-kbd">{nextKey.toUpperCase()}</kbd>
-                <span className="hotkeys-sequence-arrow">→</span>
-                <span className="hotkeys-sequence-actions">
+              <div key={nextKey} className="kbd-sequence-completion">
+                <kbd className="kbd-kbd">{nextKey.toUpperCase()}</kbd>
+                <span className="kbd-sequence-arrow">→</span>
+                <span className="kbd-sequence-actions">
                   {comps.flatMap(c => c.actions).map((action, i) => (
                     <span key={action}>
                       {i > 0 && ', '}
@@ -92,7 +92,7 @@ export function SequenceModal() {
 
         {/* No completions message */}
         {completions.length === 0 && (
-          <div className="hotkeys-sequence-empty">
+          <div className="kbd-sequence-empty">
             No matching shortcuts
           </div>
         )}
