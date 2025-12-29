@@ -78,7 +78,7 @@ export interface HotkeysContextValue {
 const HotkeysContext = createContext<HotkeysContextValue | null>(null)
 
 const DEFAULT_CONFIG: Required<HotkeysConfig> = {
-  storageKey: 'hotkeys',
+  storageKey: 'use-kbd',
   sequenceTimeout: 1000,
   disableConflicts: true,
   minViewportWidth: 768,
