@@ -330,31 +330,33 @@ export function useHotkeys(
             onSequenceProgress?.(newSequence)
           }
 
-          // Set timeout
-          setTimeoutStartedAt(Date.now())
-          timeoutRef.current = setTimeout(() => {
-            if (onTimeout === 'submit') {
-              // Try to execute whatever we have
-              // Note: We need to get the current pending keys from state
-              setPendingKeys(current => {
-                if (current.length > 0) {
-                  // We can't call tryExecute here because we don't have the event
-                  // So we'll just clear and call onSequenceCancel
-                  onSequenceCancel?.()
-                }
-                return []
-              })
-              setIsAwaitingSequence(false)
-              setTimeoutStartedAt(null)
-            } else {
-              // Cancel mode
-              setPendingKeys([])
-              setIsAwaitingSequence(false)
-              setTimeoutStartedAt(null)
-              onSequenceCancel?.()
-            }
-            timeoutRef.current = null
-          }, sequenceTimeout)
+          // Set timeout (unless Infinity - then user must explicitly cancel)
+          if (Number.isFinite(sequenceTimeout)) {
+            setTimeoutStartedAt(Date.now())
+            timeoutRef.current = setTimeout(() => {
+              if (onTimeout === 'submit') {
+                // Try to execute whatever we have
+                // Note: We need to get the current pending keys from state
+                setPendingKeys(current => {
+                  if (current.length > 0) {
+                    // We can't call tryExecute here because we don't have the event
+                    // So we'll just clear and call onSequenceCancel
+                    onSequenceCancel?.()
+                  }
+                  return []
+                })
+                setIsAwaitingSequence(false)
+                setTimeoutStartedAt(null)
+              } else {
+                // Cancel mode
+                setPendingKeys([])
+                setIsAwaitingSequence(false)
+                setTimeoutStartedAt(null)
+                onSequenceCancel?.()
+              }
+              timeoutRef.current = null
+            }, sequenceTimeout)
+          }
 
           // Prevent default for potential sequence keys
           if (preventDefault) {
@@ -383,22 +385,24 @@ export function useHotkeys(
             e.preventDefault()
           }
 
-          // Set timeout
-          setTimeoutStartedAt(Date.now())
-          timeoutRef.current = setTimeout(() => {
-            if (onTimeout === 'submit') {
-              setPendingKeys([])
-              setIsAwaitingSequence(false)
-              setTimeoutStartedAt(null)
-              onSequenceCancel?.()
-            } else {
-              setPendingKeys([])
-              setIsAwaitingSequence(false)
-              setTimeoutStartedAt(null)
-              onSequenceCancel?.()
-            }
-            timeoutRef.current = null
-          }, sequenceTimeout)
+          // Set timeout (unless Infinity - then user must explicitly cancel)
+          if (Number.isFinite(sequenceTimeout)) {
+            setTimeoutStartedAt(Date.now())
+            timeoutRef.current = setTimeout(() => {
+              if (onTimeout === 'submit') {
+                setPendingKeys([])
+                setIsAwaitingSequence(false)
+                setTimeoutStartedAt(null)
+                onSequenceCancel?.()
+              } else {
+                setPendingKeys([])
+                setIsAwaitingSequence(false)
+                setTimeoutStartedAt(null)
+                onSequenceCancel?.()
+              }
+              timeoutRef.current = null
+            }, sequenceTimeout)
+          }
         }
       }
     }

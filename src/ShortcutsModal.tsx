@@ -346,7 +346,7 @@ function BindingDisplay({
     return (
       <kbd className={kbdClassName} tabIndex={editable ? 0 : undefined}>
         {content}
-        {pendingKeys && pendingKeys.length > 0 && (
+        {pendingKeys && pendingKeys.length > 0 && Number.isFinite(timeoutDuration) && (
           <span
             key={pendingKeys.length}
             className="kbd-timeout-bar"

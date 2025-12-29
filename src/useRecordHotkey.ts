@@ -156,11 +156,12 @@ export function useRecordHotkey(options: RecordHotkeyOptions = {}): RecordHotkey
       const currentSequence = pendingKeysRef.current
       if (sequenceTimeout === 0) {
         submit(currentSequence)
-      } else {
+      } else if (Number.isFinite(sequenceTimeout)) {
         timeoutRef.current = setTimeout(() => {
           submit(currentSequence)
         }, sequenceTimeout)
       }
+      // If sequenceTimeout is Infinity, don't set a timeout (user must explicitly commit)
     }
   }, [pauseTimeout, isRecording, sequenceTimeout, submit])
 
@@ -313,15 +314,16 @@ export function useRecordHotkey(options: RecordHotkeyOptions = {}): RecordHotkey
         setPendingKeys(newSequence)
 
         // Submit immediately if timeout is 0 (no sequences mode)
-        // Otherwise set timeout to submit (unless paused)
+        // Otherwise set timeout to submit (unless paused or Infinity)
         clearTimeout_()
         if (sequenceTimeout === 0) {
           submit(newSequence)
-        } else if (!pauseTimeoutRef.current) {
+        } else if (!pauseTimeoutRef.current && Number.isFinite(sequenceTimeout)) {
           timeoutRef.current = setTimeout(() => {
             submit(newSequence)
           }, sequenceTimeout)
         }
+        // If sequenceTimeout is Infinity, don't set a timeout (user must explicitly commit)
       }
     }
 

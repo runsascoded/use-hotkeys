@@ -75,7 +75,8 @@ export interface RecordHotkeyOptions {
   /** Prevent default on captured keys (default: true) */
   preventDefault?: boolean
   /** Timeout in ms before sequence is submitted (default: DEFAULT_SEQUENCE_TIMEOUT).
-   * Set to 0 for immediate submit (no sequences - first key press is captured). */
+   * Set to 0 for immediate submit (no sequences - first key press is captured).
+   * Set to Infinity for no auto-submit (user must explicitly commit via Enter/Tab). */
   sequenceTimeout?: number
   /** When true, pause the auto-submit timeout (useful for conflict warnings). Default: false */
   pauseTimeout?: boolean
