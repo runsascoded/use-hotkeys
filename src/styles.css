@@ -26,6 +26,9 @@
   --kbd-warning: #f59e0b;
   --kbd-warning-bg: #fef3c7;
 
+  /* Timeout bar */
+  --kbd-timeout-bar: #10b981;
+
   /* Kbd element */
   --kbd-kbd-bg: #f3f4f6;
   --kbd-kbd-border: #d1d5db;
@@ -263,8 +266,8 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 2px;
-  background-color: var(--kbd-accent);
+  height: 3px;
+  background-color: var(--kbd-timeout-bar);
   animation: kbd-timeout linear forwards;
 }
 
