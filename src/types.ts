@@ -52,6 +52,8 @@ export interface RecordHotkeyResult {
   pendingKeys: HotkeySequence
   /** The key currently being held (for live UI feedback during recording) */
   activeKeys: KeyCombination | null
+  /** The timeout duration for sequences (ms) */
+  sequenceTimeout: number
   /**
    * @deprecated Use `sequence` instead
    */

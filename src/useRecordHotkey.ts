@@ -349,6 +349,7 @@ export function useRecordHotkey(options: RecordHotkeyOptions = {}): RecordHotkey
     display,
     pendingKeys,
     activeKeys,
+    sequenceTimeout,
     combination, // deprecated
   }
 }

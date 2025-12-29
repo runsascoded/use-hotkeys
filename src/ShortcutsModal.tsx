@@ -287,6 +287,7 @@ function BindingDisplay({
   onRemove,
   pendingKeys,
   activeKeys,
+  timeoutDuration = 1000,
 }: {
   binding: string
   className?: string
@@ -299,6 +300,7 @@ function BindingDisplay({
   onRemove?: () => void
   pendingKeys?: HotkeySequence
   activeKeys?: KeyCombination | null
+  timeoutDuration?: number
 }) {
   const sequence = parseHotkeyString(binding)
   const display = formatCombination(sequence)
@@ -340,7 +342,18 @@ function BindingDisplay({
       content = '...'
     }
 
-    return <kbd className={kbdClassName} tabIndex={editable ? 0 : undefined}>{content}</kbd>
+    return (
+      <kbd className={kbdClassName} tabIndex={editable ? 0 : undefined}>
+        {content}
+        {pendingKeys && pendingKeys.length > 0 && (
+          <span
+            key={pendingKeys.length}
+            className="kbd-timeout-bar"
+            style={{ animationDuration: `${timeoutDuration}ms` }}
+          />
+        )}
+      </kbd>
+    )
   }
 
   // Render normal binding
@@ -539,7 +552,7 @@ export function ShortcutsModal({
   }, [keymap])
 
   // Recording hook - uses refs to avoid stale closures
-  const { isRecording, startRecording, cancel, pendingKeys, activeKeys } = useRecordHotkey({
+  const { isRecording, startRecording, cancel, pendingKeys, activeKeys, sequenceTimeout } = useRecordHotkey({
     onCapture: useCallback(
       (_sequence: HotkeySequence, display: KeyCombinationDisplay) => {
         // Use refs for current values (avoids stale closure)
@@ -728,10 +741,11 @@ export function ShortcutsModal({
           onRemove={editable && showRemove ? () => removeBinding(actionId, key) : undefined}
           pendingKeys={pendingKeys}
           activeKeys={activeKeys}
+          timeoutDuration={sequenceTimeout}
         />
       )
     },
-    [editingAction, editingKey, addingAction, conflicts, defaults, editable, startEditingBinding, removeBinding, pendingKeys, activeKeys, isRecording, cancel, handleBindingAdd, handleBindingChange],
+    [editingAction, editingKey, addingAction, conflicts, defaults, editable, startEditingBinding, removeBinding, pendingKeys, activeKeys, isRecording, cancel, handleBindingAdd, handleBindingChange, sequenceTimeout],
   )
 
   // Helper: render add button for an action
@@ -746,6 +760,7 @@ export function ShortcutsModal({
             isEditing
             pendingKeys={pendingKeys}
             activeKeys={activeKeys}
+            timeoutDuration={sequenceTimeout}
           />
         )
       }
@@ -777,7 +792,7 @@ export function ShortcutsModal({
         </button>
       )
     },
-    [addingAction, pendingKeys, activeKeys, startAddingBinding, isRecording, cancel, handleBindingAdd, handleBindingChange],
+    [addingAction, pendingKeys, activeKeys, startAddingBinding, isRecording, cancel, handleBindingAdd, handleBindingChange, sequenceTimeout],
   )
 
   // Helper: render a cell with all bindings for an action
