@@ -166,8 +166,15 @@ export function HotkeysProvider({
     return () => window.removeEventListener('resize', checkEnabled)
   }, [config.minViewportWidth, config.enableOnTouch])
 
-  // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  // Modal state - persisted to sessionStorage
+  const modalStorageKey = `${config.storageKey}-modal-open`
+  const [isModalOpen, setIsModalOpen] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return sessionStorage.getItem(modalStorageKey) === 'true'
+  })
+  useEffect(() => {
+    sessionStorage.setItem(modalStorageKey, String(isModalOpen))
+  }, [modalStorageKey, isModalOpen])
   const openModal = useCallback(() => setIsModalOpen(true), [])
   const closeModal = useCallback(() => setIsModalOpen(false), [])
   const toggleModal = useCallback(() => setIsModalOpen(prev => !prev), [])
