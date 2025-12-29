@@ -2470,7 +2470,23 @@ function ShortcutsModal({
           isEditing: isEditingThis,
           isConflict,
           isDefault,
-          onEdit: () => startEditingBinding(actionId, key),
+          onEdit: () => {
+            if (isRecording && !(editingAction === actionId && editingKey === key)) {
+              if (pendingKeys.length > 0) {
+                const display = formatCombination(pendingKeys);
+                const currentAddingAction = addingActionRef.current;
+                const currentEditingAction = editingActionRef.current;
+                const currentEditingKey = editingKeyRef.current;
+                if (currentAddingAction) {
+                  handleBindingAdd?.(currentAddingAction, display.id);
+                } else if (currentEditingAction && currentEditingKey) {
+                  handleBindingChange?.(currentEditingAction, currentEditingKey, display.id);
+                }
+              }
+              cancel();
+            }
+            startEditingBinding(actionId, key);
+          },
           onRemove: editable && showRemove ? () => removeBinding(actionId, key) : void 0,
           pendingKeys,
           activeKeys
@@ -2478,7 +2494,7 @@ function ShortcutsModal({
         key
       );
     },
-    [editingAction, editingKey, addingAction, conflicts, defaults, editable, startEditingBinding, removeBinding, pendingKeys, activeKeys]
+    [editingAction, editingKey, addingAction, conflicts, defaults, editable, startEditingBinding, removeBinding, pendingKeys, activeKeys, isRecording, cancel, handleBindingAdd, handleBindingChange]
   );
   const renderAddButton = useCallback(
     (actionId) => {
@@ -2498,13 +2514,28 @@ function ShortcutsModal({
         "button",
         {
           className: "kbd-add-btn",
-          onClick: () => startAddingBinding(actionId),
-          disabled: isRecording && !isAddingThis,
+          onClick: () => {
+            if (isRecording && !isAddingThis) {
+              if (pendingKeys.length > 0) {
+                const display = formatCombination(pendingKeys);
+                const currentAddingAction = addingActionRef.current;
+                const currentEditingAction = editingActionRef.current;
+                const currentEditingKey = editingKeyRef.current;
+                if (currentAddingAction) {
+                  handleBindingAdd?.(currentAddingAction, display.id);
+                } else if (currentEditingAction && currentEditingKey) {
+                  handleBindingChange?.(currentEditingAction, currentEditingKey, display.id);
+                }
+              }
+              cancel();
+            }
+            startAddingBinding(actionId);
+          },
           children: "+"
         }
       );
     },
-    [addingAction, pendingKeys, activeKeys, startAddingBinding, isRecording]
+    [addingAction, pendingKeys, activeKeys, startAddingBinding, isRecording, cancel, handleBindingAdd, handleBindingChange]
   );
   const renderCell = useCallback(
     (actionId, keys) => {
