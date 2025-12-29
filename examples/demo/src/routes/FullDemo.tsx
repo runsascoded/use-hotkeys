@@ -4,8 +4,26 @@ import {
   ShortcutsModal,
   useAction,
   useHotkeysContext,
+  parseHotkeyString,
+  formatCombination,
 } from 'use-kbd'
 import 'use-kbd/styles.css'
+
+/** Display the current binding(s) for an action */
+function Kbd({ action }: { action: string }) {
+  const ctx = useHotkeysContext()
+  const bindings = ctx.registry.getBindingsForAction(action)
+
+  if (bindings.length === 0) return null
+
+  // Format each binding for display
+  const formatted = bindings.map(b => {
+    const parsed = parseHotkeyString(b)
+    return formatCombination(parsed).display
+  })
+
+  return <kbd>{formatted.join(' / ')}</kbd>
+}
 
 interface Todo {
   id: number
@@ -86,7 +104,7 @@ function TodoList() {
   useAction('next', {
     label: 'Next',
     group: 'Navigation',
-    defaultBindings: ['j'],
+    defaultBindings: ['j', 'ArrowDown'],
     handler: useCallback(() => {
       if (selectedIndex < todos.length - 1) {
         setSelectedId(todos[selectedIndex + 1].id)
@@ -97,7 +115,7 @@ function TodoList() {
   useAction('prev', {
     label: 'Previous',
     group: 'Navigation',
-    defaultBindings: ['k'],
+    defaultBindings: ['k', 'ArrowUp'],
     handler: useCallback(() => {
       if (selectedIndex > 0) {
         setSelectedId(todos[selectedIndex - 1].id)
@@ -198,7 +216,7 @@ function TodoList() {
   return (
     <div className="todo-app">
       <h1>Full Demo - Todo List with Sequences</h1>
-      <p className="hint">Press <kbd>?</kbd> to see keyboard shortcuts. Try sequences like <kbd>2 W</kbd> for due dates!</p>
+      <p className="hint">Press <Kbd action="help" /> to see keyboard shortcuts. Try <Kbd action="due:2w" /> for due dates!</p>
 
       <ul className="todo-list">
         {todos.map(todo => (
