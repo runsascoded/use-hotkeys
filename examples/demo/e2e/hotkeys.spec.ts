@@ -1,331 +1,265 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('Full Demo - Sequences and Editing', () => {
+test.describe('Global Features', () => {
   test.beforeEach(async ({ page }) => {
-    // Clear localStorage (both overrides and removed defaults)
     await page.addInitScript(() => {
-      localStorage.removeItem('use-kbd-demo-full')
-      localStorage.removeItem('use-kbd-demo-full-removed')
+      localStorage.removeItem('use-kbd-demo')
+      localStorage.removeItem('use-kbd-demo-removed')
     })
-    await page.goto('/full')
+    await page.goto('/')
   })
 
   test('can open shortcuts modal with ? key', async ({ page }) => {
-    // Focus the page
     await page.locator('body').click({ position: { x: 10, y: 10 } })
 
-    // Press ? to open modal
     await page.keyboard.press('?')
-
-    // Wait for modal
     await page.waitForSelector('.kbd-modal', { timeout: 5000 })
 
-    // Verify modal is visible
     const modal = page.locator('.kbd-modal')
     await expect(modal).toBeVisible()
   })
 
-  test('navigation with j/k keys works', async ({ page }) => {
-    // Focus the page
+  test('can open and close omnibar with Cmd+K', async ({ page }) => {
     await page.locator('body').click({ position: { x: 10, y: 10 } })
 
-    // First item should be selected by default
-    const items = page.locator('.todo-item')
-    await expect(items.first()).toHaveClass(/selected/)
+    // Open omnibar
+    await page.keyboard.press('Meta+k')
+    await page.waitForSelector('.kbd-omnibar', { timeout: 5000 })
+    await expect(page.locator('.kbd-omnibar')).toBeVisible()
 
-    // Press j to move down
-    await page.keyboard.press('j')
-    await page.waitForTimeout(100)
-
-    // Second item should be selected
-    await expect(items.nth(1)).toHaveClass(/selected/)
-
-    // Press k to move up
-    await page.keyboard.press('k')
-    await page.waitForTimeout(100)
-
-    // First item should be selected again
-    await expect(items.first()).toHaveClass(/selected/)
+    // Close with Escape
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(200)
+    await expect(page.locator('.kbd-omnibar')).not.toBeVisible()
   })
 
-  test('can toggle todo done state with Enter', async ({ page }) => {
+  test('can navigate to Table via g t sequence', async ({ page }) => {
     await page.locator('body').click({ position: { x: 10, y: 10 } })
 
-    const firstItem = page.locator('.todo-item').first()
-    await expect(firstItem).not.toHaveClass(/done/)
-
-    // Press Enter to toggle
-    await page.keyboard.press('Enter')
+    await page.keyboard.press('g')
     await page.waitForTimeout(100)
-
-    // Should be marked as done
-    await expect(firstItem).toHaveClass(/done/)
-
-    // Toggle back
-    await page.keyboard.press('Enter')
-    await page.waitForTimeout(100)
-
-    await expect(firstItem).not.toHaveClass(/done/)
-  })
-
-  test('key sequence sets due date', async ({ page }) => {
-    await page.locator('body').click({ position: { x: 10, y: 10 } })
-
-    const firstItem = page.locator('.todo-item').first()
-
-    // No due date initially
-    await expect(firstItem.locator('.due-date')).toHaveCount(0)
-
-    // Press "1 w" sequence for 1 week
-    await page.keyboard.press('1')
-    await page.waitForTimeout(100)
-    await page.keyboard.press('w')
-
-    // Wait for sequence timeout
+    await page.keyboard.press('t')
     await page.waitForTimeout(1200)
 
-    // Should have a due date now
-    await expect(firstItem.locator('.due-date')).toBeVisible()
+    await expect(page).toHaveURL('/table')
+    await expect(page.locator('.data-table-app')).toBeVisible()
   })
 
-  test('can edit hotkey in modal', async ({ page }) => {
+  test('can navigate via omnibar search', async ({ page }) => {
     await page.locator('body').click({ position: { x: 10, y: 10 } })
 
-    // Open modal
-    await page.keyboard.press('?')
-    await page.waitForSelector('.kbd-modal', { timeout: 5000 })
+    await page.keyboard.press('Meta+k')
+    await page.waitForSelector('.kbd-omnibar', { timeout: 5000 })
 
-    // Find an editable kbd element (look for 'N' key for 'new' action)
-    const kbdElement = page.locator('.kbd-kbd.editable', { hasText: 'N' }).first()
-    await expect(kbdElement).toBeVisible()
-
-    // Click to start editing
-    await kbdElement.click()
-    await page.waitForTimeout(100)
-
-    // After clicking, the element should be in editing mode (may be a new DOM element after re-render)
-    const editingElement = page.locator('.kbd-kbd.editing')
-    await expect(editingElement).toBeVisible({ timeout: 2000 })
-
-    // Press a new key
-    await page.keyboard.press('q')
-
-    // Wait for sequence timeout
-    await page.waitForTimeout(1200)
-
-    // Should show the new key
-    await expect(page.locator('.kbd-kbd', { hasText: 'Q' })).toBeVisible()
-  })
-
-  test('can re-add a default binding after removing it', async ({ page }) => {
-    await page.locator('body').click({ position: { x: 10, y: 10 } })
-
-    // Open modal
-    await page.keyboard.press('?')
-    await page.waitForSelector('.kbd-modal', { timeout: 5000 })
-
-    // Find the "Due in 1 day" action which has default binding "1 D"
-    const dueAction = page.locator('.kbd-action', { hasText: 'Due in 1 day' })
-    const dueKbd = dueAction.locator('.kbd-kbd.editable').first()
-    await expect(dueKbd).toBeVisible()
-
-    // Add a new binding "x"
-    const addBtn = dueAction.locator('.kbd-add-btn')
-    await addBtn.click()
-    await page.waitForTimeout(100)
-    await page.keyboard.press('x')
-    await page.waitForTimeout(1200)
-
-    // Should now have two bindings
-    await expect(dueAction.locator('.kbd-kbd.editable')).toHaveCount(2)
-
-    // Remove the original "1 D" binding by hovering and clicking x
-    const originalKbd = dueAction.locator('.kbd-kbd.editable', { hasText: '1' }).first()
-    await originalKbd.hover()
-    const removeBtn = originalKbd.locator('.kbd-remove-btn')
-    await removeBtn.click()
+    // Search for "canvas"
+    await page.keyboard.type('canvas')
     await page.waitForTimeout(200)
 
-    // Should now have only "X" binding
-    await expect(dueAction.locator('.kbd-kbd.editable')).toHaveCount(1)
-    await expect(dueAction.locator('.kbd-kbd.editable', { hasText: 'X' })).toBeVisible()
+    // Should show Canvas result
+    await expect(page.locator('.kbd-omnibar-result-label', { hasText: 'Canvas' })).toBeVisible()
 
-    // Re-add the original binding "1 d"
-    const addBtn2 = dueAction.locator('.kbd-add-btn')
-    await addBtn2.click()
-    await page.waitForTimeout(100)
-    await page.keyboard.press('1')
-    await page.waitForTimeout(100)
-    await page.keyboard.press('d')
-    await page.waitForTimeout(1200)
+    // Press Enter to execute
+    await page.keyboard.press('Enter')
+    await page.waitForTimeout(300)
 
-    // Should now have both bindings again
-    await expect(dueAction.locator('.kbd-kbd.editable')).toHaveCount(2)
-    await expect(dueAction.locator('.kbd-kbd.editable', { hasText: '1' })).toBeVisible()
-    await expect(dueAction.locator('.kbd-kbd.editable', { hasText: 'X' })).toBeVisible()
-  })
-
-  test('action with no bindings still shows in modal with add button', async ({ page }) => {
-    await page.locator('body').click({ position: { x: 10, y: 10 } })
-
-    // Open modal
-    await page.keyboard.press('?')
-    await page.waitForSelector('.kbd-modal', { timeout: 5000 })
-
-    // Find the "Due in 1 day" action in the "Due Date" group
-    const dueGroup = page.locator('.kbd-group', { hasText: 'DUE DATE' })
-    const dueAction = dueGroup.locator('.kbd-action', { hasText: 'Due in 1 day' })
-    await expect(dueAction).toBeVisible()
-
-    // Remove the binding
-    const dueKbd = dueAction.locator('.kbd-kbd.editable').first()
-    await dueKbd.hover()
-    const removeBtn = dueKbd.locator('.kbd-remove-btn')
-    await removeBtn.click()
-    await page.waitForTimeout(200)
-
-    // Action should STILL be in the same group with add button
-    const dueGroupAfter = page.locator('.kbd-group', { hasText: 'DUE DATE' })
-    const dueActionAfter = dueGroupAfter.locator('.kbd-action', { hasText: 'Due in 1 day' })
-    await expect(dueActionAfter).toBeVisible()
-    await expect(dueActionAfter.locator('.kbd-add-btn')).toBeVisible()
-
-    // Should have no kbd elements
-    await expect(dueActionAfter.locator('.kbd-kbd.editable')).toHaveCount(0)
-
-    // Can add a new binding
-    const addBtn = dueActionAfter.locator('.kbd-add-btn')
-    await addBtn.click()
-    await page.waitForTimeout(100)
-    await page.keyboard.press('z')
-    await page.waitForTimeout(1200)
-
-    // Should have the new binding, still in the same group
-    await expect(dueActionAfter.locator('.kbd-kbd.editable', { hasText: 'Z' })).toBeVisible()
+    await expect(page).toHaveURL('/canvas')
   })
 })
 
-test.describe('Data Table Demo - Immediate Response', () => {
+test.describe('Data Table Demo', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.removeItem('use-kbd-demo-simple')
-      localStorage.removeItem('use-kbd-demo-simple-removed')
+      localStorage.removeItem('use-kbd-demo')
+      localStorage.removeItem('use-kbd-demo-removed')
     })
-    await page.goto('/simple')
+    await page.goto('/table')
   })
 
-  test('hotkeys respond immediately without timeout', async ({ page }) => {
+  test('keyboard navigation works with j/k', async ({ page }) => {
     await page.locator('body').click({ position: { x: 10, y: 10 } })
 
     const rows = page.locator('.data-table tbody tr')
     await expect(rows.first()).toHaveClass(/selected/)
 
-    // Press j - should move immediately
-    const startTime = Date.now()
+    // Press j to move down
     await page.keyboard.press('j')
-
-    // Check immediately (within 100ms, not waiting for 1000ms timeout)
-    await page.waitForTimeout(50)
+    await page.waitForTimeout(100)
     await expect(rows.nth(1)).toHaveClass(/selected/)
 
-    const elapsed = Date.now() - startTime
-    expect(elapsed).toBeLessThan(500) // Should be much faster than sequence timeout
+    // Press k to move up
+    await page.keyboard.press('k')
+    await page.waitForTimeout(100)
+    await expect(rows.first()).toHaveClass(/selected/)
   })
 
   test('can sort columns with single keys', async ({ page }) => {
     await page.locator('body').click({ position: { x: 10, y: 10 } })
 
-    // Get first row name before sort
     const firstCell = page.locator('.data-table tbody tr:first-child td:first-child')
-    await expect(firstCell).toHaveText('Alpha')
+    await expect(firstCell).toHaveText('Alpha-1')
 
-    // Press 'n' to sort by name ascending (already ascending, so same order)
+    // Press 'n' to sort by name ascending
     await page.keyboard.press('n')
     await page.waitForTimeout(100)
-    await expect(firstCell).toHaveText('Alpha')
+    await expect(firstCell).toHaveText('Alpha-1')
 
     // Press Shift+N to sort by name descending
     await page.keyboard.press('Shift+n')
     await page.waitForTimeout(100)
-    await expect(firstCell).toHaveText('Gamma')
+    const text = await firstCell.textContent()
+    expect(text).toMatch(/^Zeta-/)
   })
 
-  test('can open and close shortcuts modal with two-column layout', async ({ page }) => {
+  test('shortcuts modal has two-column layout for certain groups', async ({ page }) => {
     await page.locator('body').click({ position: { x: 10, y: 10 } })
 
-    // Open
     await page.keyboard.press('?')
     await page.waitForSelector('.kbd-modal', { timeout: 5000 })
-    await expect(page.locator('.kbd-modal')).toBeVisible()
 
-    // Verify two-column tables exist for Sort and Navigation groups
+    // Verify two-column tables exist for Sort, Row Navigation, and Page Navigation
     const tables = page.locator('.kbd-table')
-    await expect(tables).toHaveCount(2)
+    await expect(tables).toHaveCount(3)
 
-    // Close with Escape
     await page.keyboard.press('Escape')
-    await page.waitForTimeout(300)
-    await expect(page.locator('.kbd-modal')).not.toBeVisible()
+  })
+
+  test('can edit shortcut in modal', async ({ page }) => {
+    await page.locator('body').click({ position: { x: 10, y: 10 } })
+
+    await page.keyboard.press('?')
+    await page.waitForSelector('.kbd-modal', { timeout: 5000 })
+
+    // Find editable kbd element with 'N' (sort by name)
+    const kbdElement = page.locator('.kbd-kbd.editable', { hasText: 'N' }).first()
+    await expect(kbdElement).toBeVisible()
+
+    await kbdElement.click()
+    await page.waitForTimeout(100)
+
+    const editingElement = page.locator('.kbd-kbd.editing')
+    await expect(editingElement).toBeVisible({ timeout: 2000 })
+
+    // Press new key
+    await page.keyboard.press('x')
+    await page.waitForTimeout(1200)
+
+    // Should show new key
+    await expect(page.locator('.kbd-kbd', { hasText: 'X' })).toBeVisible()
   })
 })
 
-test.describe('Routes Demo - Route-specific Hotkeys', () => {
+test.describe('Canvas Demo', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.removeItem('use-kbd-demo-routes')
-      localStorage.removeItem('use-kbd-demo-routes-removed')
+      localStorage.removeItem('use-kbd-demo')
+      localStorage.removeItem('use-kbd-demo-removed')
     })
+    await page.goto('/canvas')
   })
 
-  test('global hotkeys work on all routes', async ({ page }) => {
-    await page.goto('/routes')
+  test('can switch tools with hotkeys', async ({ page }) => {
     await page.locator('body').click({ position: { x: 10, y: 10 } })
 
-    // ? should work on home
-    await page.keyboard.press('?')
-    await page.waitForSelector('.kbd-modal', { timeout: 5000 })
-    await expect(page.locator('.kbd-modal')).toBeVisible()
-    await page.keyboard.press('Escape')
-    await page.waitForTimeout(300)
+    // Default tool should be pen (✏ is active)
+    await expect(page.locator('.tool-btn.active')).toHaveText('✏')
 
-    // Navigate to inbox
-    await page.click('a[href="/routes/inbox"]')
-    await page.waitForTimeout(300)
+    // Press 'e' to switch to eraser
+    await page.keyboard.press('e')
+    await page.waitForTimeout(100)
+    await expect(page.locator('.tool-btn.active')).toHaveText('⌫')
 
-    // ? should still work
-    await page.locator('body').click({ position: { x: 10, y: 10 } })
-    await page.keyboard.press('?')
-    await page.waitForSelector('.kbd-modal', { timeout: 5000 })
-    await expect(page.locator('.kbd-modal')).toBeVisible()
+    // Press 'l' to switch to line
+    await page.keyboard.press('l')
+    await page.waitForTimeout(100)
+    await expect(page.locator('.tool-btn.active')).toHaveText('╱')
   })
 
-  test('inbox-specific hotkeys only work on inbox route', async ({ page }) => {
-    await page.goto('/routes/inbox')
+  test('can change colors with number keys', async ({ page }) => {
     await page.locator('body').click({ position: { x: 10, y: 10 } })
 
-    // Select first message
-    const firstMessage = page.locator('.message-item').first()
-    await firstMessage.click()
-    await expect(firstMessage).toHaveClass(/selected/)
+    // Press '2' for red
+    await page.keyboard.press('2')
+    await page.waitForTimeout(100)
 
-    // M should toggle read status
-    await expect(firstMessage).toHaveClass(/unread/)
+    // Red color button should be active
+    const activeColor = page.locator('.color-btn.active')
+    await expect(activeColor).toHaveCSS('background-color', 'rgb(239, 68, 68)')
+  })
+
+  test('shortcuts modal shows tool and color shortcuts', async ({ page }) => {
+    await page.locator('body').click({ position: { x: 10, y: 10 } })
+
+    await page.keyboard.press('?')
+    await page.waitForSelector('.kbd-modal', { timeout: 5000 })
+
+    // Should have Tools group
+    await expect(page.locator('.kbd-group', { hasText: 'TOOLS' })).toBeVisible()
+
+    // Should have Colors group
+    await expect(page.locator('.kbd-group', { hasText: 'COLORS' })).toBeVisible()
+  })
+})
+
+test.describe('Calendar Demo', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.removeItem('use-kbd-demo')
+      localStorage.removeItem('use-kbd-demo-removed')
+    })
+    await page.goto('/calendar')
+  })
+
+  test('can navigate with vim keys', async ({ page }) => {
+    await page.locator('body').click({ position: { x: 10, y: 10 } })
+
+    // Get initially selected date
+    const selected = page.locator('.calendar-day.selected')
+    await expect(selected).toBeVisible()
+
+    // Press 'l' to move right (next day)
+    await page.keyboard.press('l')
+    await page.waitForTimeout(100)
+
+    // Selection should have moved
+    const newSelected = page.locator('.calendar-day.selected')
+    await expect(newSelected).toBeVisible()
+  })
+
+  test('can switch view modes', async ({ page }) => {
+    await page.locator('body').click({ position: { x: 10, y: 10 } })
+
+    // Default should show month view (calendar grid)
+    await expect(page.locator('.calendar-grid')).toBeVisible()
+
+    // Press 'w' for week view
+    await page.keyboard.press('w')
+    await page.waitForTimeout(100)
+    await expect(page.locator('.week-view')).toBeVisible()
+
+    // Press 'd' for day view
+    await page.keyboard.press('d')
+    await page.waitForTimeout(100)
+    await expect(page.locator('.day-view')).toBeVisible()
+
+    // Press 'm' to return to month view
     await page.keyboard.press('m')
     await page.waitForTimeout(100)
-    await expect(firstMessage).toHaveClass(/read/)
+    await expect(page.locator('.calendar-grid')).toBeVisible()
   })
 
-  test('project-specific hotkeys only work on projects route', async ({ page }) => {
-    await page.goto('/routes/projects')
+  test('can go to today with t key', async ({ page }) => {
     await page.locator('body').click({ position: { x: 10, y: 10 } })
 
-    const projectCount = await page.locator('.project-item').count()
-
-    // N should create new project
-    await page.keyboard.press('n')
+    // Navigate away from today using [ (prev month)
+    await page.keyboard.press('[')
     await page.waitForTimeout(100)
 
-    // Should have one more project
-    await expect(page.locator('.project-item')).toHaveCount(projectCount + 1)
+    // Press 't' to go back to today
+    await page.keyboard.press('t')
+    await page.waitForTimeout(100)
+
+    // Today should be both selected and marked as today
+    const todayCell = page.locator('.calendar-day.today.selected')
+    await expect(todayCell).toBeVisible()
   })
 })

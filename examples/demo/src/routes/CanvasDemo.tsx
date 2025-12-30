@@ -1,0 +1,348 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Kbd, ShortcutsModal, useAction, useHotkeysContext } from 'use-kbd'
+import 'use-kbd/styles.css'
+
+type Tool = 'pen' | 'eraser' | 'line' | 'rect' | 'circle'
+
+interface Point {
+  x: number
+  y: number
+}
+
+interface Stroke {
+  tool: Tool
+  color: string
+  size: number
+  points: Point[]
+  startPoint?: Point
+  endPoint?: Point
+}
+
+const COLORS = [
+  { name: 'Black', value: '#000000', key: '1' },
+  { name: 'Red', value: '#ef4444', key: '2' },
+  { name: 'Orange', value: '#f97316', key: '3' },
+  { name: 'Yellow', value: '#eab308', key: '4' },
+  { name: 'Green', value: '#22c55e', key: '5' },
+  { name: 'Blue', value: '#3b82f6', key: '6' },
+  { name: 'Purple', value: '#a855f7', key: '7' },
+  { name: 'White', value: '#ffffff', key: '8' },
+]
+
+const SIZES = [2, 4, 8, 16, 32]
+
+function Canvas() {
+  const ctx = useHotkeysContext()
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [tool, setTool] = useState<Tool>('pen')
+  const [color, setColor] = useState('#000000')
+  const [size, setSize] = useState(4)
+  const [isDrawing, setIsDrawing] = useState(false)
+  const [strokes, setStrokes] = useState<Stroke[]>([])
+  const [currentStroke, setCurrentStroke] = useState<Stroke | null>(null)
+  const [history, setHistory] = useState<Stroke[][]>([])
+  const [redoStack, setRedoStack] = useState<Stroke[][]>([])
+
+  // Draw all strokes to canvas
+  const redraw = useCallback(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const c = canvas.getContext('2d')
+    if (!c) return
+
+    c.fillStyle = '#1a1a1a'
+    c.fillRect(0, 0, canvas.width, canvas.height)
+
+    const allStrokes = currentStroke ? [...strokes, currentStroke] : strokes
+    for (const stroke of allStrokes) {
+      c.strokeStyle = stroke.color
+      c.lineWidth = stroke.size
+      c.lineCap = 'round'
+      c.lineJoin = 'round'
+
+      if (stroke.tool === 'pen' || stroke.tool === 'eraser') {
+        if (stroke.points.length < 2) continue
+        c.beginPath()
+        c.moveTo(stroke.points[0].x, stroke.points[0].y)
+        for (let i = 1; i < stroke.points.length; i++) {
+          c.lineTo(stroke.points[i].x, stroke.points[i].y)
+        }
+        c.stroke()
+      } else if (stroke.tool === 'line' && stroke.startPoint && stroke.endPoint) {
+        c.beginPath()
+        c.moveTo(stroke.startPoint.x, stroke.startPoint.y)
+        c.lineTo(stroke.endPoint.x, stroke.endPoint.y)
+        c.stroke()
+      } else if (stroke.tool === 'rect' && stroke.startPoint && stroke.endPoint) {
+        c.beginPath()
+        const w = stroke.endPoint.x - stroke.startPoint.x
+        const h = stroke.endPoint.y - stroke.startPoint.y
+        c.strokeRect(stroke.startPoint.x, stroke.startPoint.y, w, h)
+      } else if (stroke.tool === 'circle' && stroke.startPoint && stroke.endPoint) {
+        c.beginPath()
+        const dx = stroke.endPoint.x - stroke.startPoint.x
+        const dy = stroke.endPoint.y - stroke.startPoint.y
+        const radius = Math.sqrt(dx * dx + dy * dy)
+        c.arc(stroke.startPoint.x, stroke.startPoint.y, radius, 0, Math.PI * 2)
+        c.stroke()
+      }
+    }
+  }, [strokes, currentStroke])
+
+  useEffect(() => {
+    redraw()
+  }, [redraw])
+
+  // Resize canvas on mount
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const parent = canvas.parentElement
+    if (!parent) return
+    canvas.width = parent.clientWidth
+    canvas.height = 400
+    redraw()
+  }, [redraw])
+
+  const getPoint = (e: React.MouseEvent<HTMLCanvasElement>): Point => {
+    const canvas = canvasRef.current!
+    const rect = canvas.getBoundingClientRect()
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    }
+  }
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const point = getPoint(e)
+    setIsDrawing(true)
+    const effectiveColor = tool === 'eraser' ? '#1a1a1a' : color
+    setCurrentStroke({
+      tool,
+      color: effectiveColor,
+      size: tool === 'eraser' ? size * 2 : size,
+      points: [point],
+      startPoint: point,
+      endPoint: point,
+    })
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !currentStroke) return
+    const point = getPoint(e)
+
+    if (tool === 'pen' || tool === 'eraser') {
+      setCurrentStroke(s => s ? { ...s, points: [...s.points, point] } : null)
+    } else {
+      setCurrentStroke(s => s ? { ...s, endPoint: point } : null)
+    }
+  }
+
+  const handleMouseUp = () => {
+    if (currentStroke) {
+      setHistory(h => [...h, strokes])
+      setRedoStack([])
+      setStrokes(s => [...s, currentStroke])
+      setCurrentStroke(null)
+    }
+    setIsDrawing(false)
+  }
+
+  // Tool actions
+  useAction('tool:pen', {
+    label: 'Pen tool',
+    group: 'Tools',
+    defaultBindings: ['p'],
+    handler: useCallback(() => setTool('pen'), []),
+  })
+
+  useAction('tool:eraser', {
+    label: 'Eraser',
+    group: 'Tools',
+    defaultBindings: ['e'],
+    handler: useCallback(() => setTool('eraser'), []),
+  })
+
+  useAction('tool:line', {
+    label: 'Line tool',
+    group: 'Tools',
+    defaultBindings: ['l'],
+    handler: useCallback(() => setTool('line'), []),
+  })
+
+  useAction('tool:rect', {
+    label: 'Rectangle',
+    group: 'Tools',
+    defaultBindings: ['r'],
+    handler: useCallback(() => setTool('rect'), []),
+  })
+
+  useAction('tool:circle', {
+    label: 'Circle',
+    group: 'Tools',
+    defaultBindings: ['o'],
+    handler: useCallback(() => setTool('circle'), []),
+  })
+
+  // Color actions
+  COLORS.forEach(c => {
+    useAction(`color:${c.name.toLowerCase()}`, {
+      label: c.name,
+      group: 'Colors',
+      defaultBindings: [c.key],
+      handler: () => setColor(c.value),
+    })
+  })
+
+  // Size actions
+  useAction('size:decrease', {
+    label: 'Smaller brush',
+    group: 'Brush Size',
+    defaultBindings: ['['],
+    handler: useCallback(() => {
+      setSize(s => {
+        const idx = SIZES.indexOf(s)
+        return idx > 0 ? SIZES[idx - 1] : s
+      })
+    }, []),
+  })
+
+  useAction('size:increase', {
+    label: 'Larger brush',
+    group: 'Brush Size',
+    defaultBindings: [']'],
+    handler: useCallback(() => {
+      setSize(s => {
+        const idx = SIZES.indexOf(s)
+        return idx < SIZES.length - 1 ? SIZES[idx + 1] : s
+      })
+    }, []),
+  })
+
+  // Edit actions
+  useAction('edit:undo', {
+    label: 'Undo',
+    group: 'Edit',
+    defaultBindings: ['meta+z'],
+    handler: useCallback(() => {
+      if (history.length > 0) {
+        const prev = history[history.length - 1]
+        setRedoStack(r => [...r, strokes])
+        setStrokes(prev)
+        setHistory(h => h.slice(0, -1))
+      }
+    }, [history, strokes]),
+  })
+
+  useAction('edit:redo', {
+    label: 'Redo',
+    group: 'Edit',
+    defaultBindings: ['meta+shift+z'],
+    handler: useCallback(() => {
+      if (redoStack.length > 0) {
+        const next = redoStack[redoStack.length - 1]
+        setHistory(h => [...h, strokes])
+        setStrokes(next)
+        setRedoStack(r => r.slice(0, -1))
+      }
+    }, [redoStack, strokes]),
+  })
+
+  useAction('edit:clear', {
+    label: 'Clear canvas',
+    group: 'Edit',
+    defaultBindings: ['meta+backspace'],
+    handler: useCallback(() => {
+      if (strokes.length > 0) {
+        setHistory(h => [...h, strokes])
+        setRedoStack([])
+        setStrokes([])
+      }
+    }, [strokes]),
+  })
+
+
+  return (
+    <div className="canvas-app">
+      <h1>Canvas Demo</h1>
+      <p className="hint">
+        Press <Kbd action="global:0-help" /> for shortcuts. Draw with mouse, use number keys for colors.
+      </p>
+
+      <div className="canvas-toolbar">
+        <div className="tool-group">
+          <span className="group-label">Tool:</span>
+          {([
+            { id: 'pen', icon: '✏', label: 'Pen (P)' },
+            { id: 'eraser', icon: '⌫', label: 'Eraser (E)' },
+            { id: 'line', icon: '╱', label: 'Line (L)' },
+            { id: 'rect', icon: '▢', label: 'Rectangle (R)' },
+            { id: 'circle', icon: '○', label: 'Circle (O)' },
+          ] as const).map(t => (
+            <button
+              key={t.id}
+              className={`tool-btn ${tool === t.id ? 'active' : ''}`}
+              onClick={() => setTool(t.id)}
+              title={t.label}
+            >
+              {t.icon}
+            </button>
+          ))}
+        </div>
+
+        <div className="tool-group">
+          <span className="group-label">Color:</span>
+          {COLORS.map(c => (
+            <button
+              key={c.value}
+              className={`color-btn ${color === c.value ? 'active' : ''}`}
+              style={{ backgroundColor: c.value }}
+              onClick={() => setColor(c.value)}
+              title={`${c.name} (${c.key})`}
+            />
+          ))}
+        </div>
+
+        <div className="tool-group">
+          <span className="group-label">Size:</span>
+          {SIZES.map(s => (
+            <button
+              key={s}
+              className={`size-btn ${size === s ? 'active' : ''}`}
+              onClick={() => setSize(s)}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="canvas-container">
+        <canvas
+          ref={canvasRef}
+          className="drawing-canvas"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        />
+      </div>
+
+      <div className="canvas-status">
+        <span>Tool: {tool}</span>
+        <span>Size: {size}px</span>
+        <span>Strokes: {strokes.length}</span>
+        <span>History: {history.length}</span>
+      </div>
+
+      <ShortcutsModal
+        editable
+        groupOrder={['Tools', 'Colors', 'Brush Size', 'Edit', 'Global', 'Navigation']}
+      />
+    </div>
+  )
+}
+
+export function CanvasDemo() {
+  return <Canvas />
+}
