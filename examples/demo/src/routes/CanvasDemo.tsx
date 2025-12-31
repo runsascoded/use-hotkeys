@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Kbd, ShortcutsModal, useAction } from 'use-kbd'
 import 'use-kbd/styles.css'
+import { useTheme } from '../contexts/ThemeContext'
+
+// Canvas background colors for each theme
+const CANVAS_BG = {
+  light: '#e8e8e8',
+  dark: '#1a1a1a',
+}
 
 type Tool = 'pen' | 'eraser' | 'line' | 'rect' | 'circle'
 
@@ -33,6 +40,8 @@ const SIZES = [2, 4, 8, 16, 32]
 
 function Canvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { resolvedTheme } = useTheme()
+  const canvasBg = CANVAS_BG[resolvedTheme]
   const [tool, setTool] = useState<Tool>('pen')
   const [color, setColor] = useState('#000000')
   const [size, setSize] = useState(4)
@@ -49,7 +58,7 @@ function Canvas() {
     const c = canvas.getContext('2d')
     if (!c) return
 
-    c.fillStyle = '#1a1a1a'
+    c.fillStyle = canvasBg
     c.fillRect(0, 0, canvas.width, canvas.height)
 
     const allStrokes = currentStroke ? [...strokes, currentStroke] : strokes
@@ -86,7 +95,7 @@ function Canvas() {
         c.stroke()
       }
     }
-  }, [strokes, currentStroke])
+  }, [strokes, currentStroke, canvasBg])
 
   useEffect(() => {
     redraw()
@@ -115,7 +124,7 @@ function Canvas() {
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const point = getPoint(e)
     setIsDrawing(true)
-    const effectiveColor = tool === 'eraser' ? '#1a1a1a' : color
+    const effectiveColor = tool === 'eraser' ? canvasBg : color
     setCurrentStroke({
       tool,
       color: effectiveColor,
@@ -183,9 +192,9 @@ function Canvas() {
     handler: useCallback(() => setTool('circle'), []),
   })
 
-  // Color actions
+  // Color actions (prefix with key number for proper sort order in modal)
   COLORS.forEach(c => {
-    useAction(`color:${c.name.toLowerCase()}`, {
+    useAction(`color:${c.key}-${c.name.toLowerCase()}`, {
       label: c.name,
       group: 'Colors',
       defaultBindings: [c.key],
@@ -222,7 +231,7 @@ function Canvas() {
   useAction('edit:undo', {
     label: 'Undo',
     group: 'Edit',
-    defaultBindings: ['meta+z'],
+    defaultBindings: ['z', 'meta+z'],
     handler: useCallback(() => {
       if (history.length > 0) {
         const prev = history[history.length - 1]
@@ -236,7 +245,7 @@ function Canvas() {
   useAction('edit:redo', {
     label: 'Redo',
     group: 'Edit',
-    defaultBindings: ['meta+shift+z'],
+    defaultBindings: ['shift+z', 'meta+shift+z'],
     handler: useCallback(() => {
       if (redoStack.length > 0) {
         const next = redoStack[redoStack.length - 1]
@@ -263,7 +272,7 @@ function Canvas() {
 
   return (
     <div className="canvas-app">
-      <h1>Canvas Demo</h1>
+      <h1 id="demo">Canvas Demo</h1>
       <p className="hint">
         Press <Kbd action="global:0-help" /> for shortcuts. Draw with mouse, use number keys for colors.
       </p>
