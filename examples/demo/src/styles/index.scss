@@ -1,0 +1,18 @@
+// Demo site styles
+//
+// Structure:
+// - _variables.scss - Theme CSS custom properties (light/dark)
+// - _base.scss      - Reset, typography, app layout
+// - _home.scss      - Home page / documentation
+// - _shared.scss    - Shared components (hint, floating controls)
+// - _table.scss     - Table demo (navigation, pagination, selection)
+// - _canvas.scss    - Canvas demo (tools, colors, undo/redo)
+// - _calendar.scss  - Calendar demo (navigation, views, events)
+
+@use 'variables';
+@use 'base';
+@use 'home';
+@use 'shared';
+@use 'table';
+@use 'canvas';
+@use 'calendar';

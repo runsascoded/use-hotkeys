@@ -1,0 +1,89 @@
+// Base styles: reset, typography, app layout
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+a {
+  font-weight: 500;
+  color: var(--link-color);
+  text-decoration: inherit;
+
+  &:hover {
+    color: var(--link-hover);
+  }
+}
+
+h1 {
+  font-size: 2em;
+  line-height: 1.2;
+  margin-bottom: 0.5em;
+}
+
+h2 {
+  font-size: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+kbd {
+  display: inline-block;
+  padding: 0.2em 0.5em;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+  background: var(--kbd-bg);
+  border-radius: 4px;
+  border: 1px solid var(--border-tertiary);
+}
+
+code {
+  font-family: ui-monospace, monospace;
+  background: var(--kbd-bg);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}
+
+// App layout
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 2rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.nav-separator {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+
+  &::before {
+    content: '|';
+    margin-right: 1.5rem;
+    opacity: 0.4;
+  }
+}
+
+.main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}

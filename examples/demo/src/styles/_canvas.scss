@@ -1,0 +1,143 @@
+// Canvas Demo styles
+// Demonstrates: tool selection, color/brush size shortcuts, undo/redo
+
+.canvas-app {
+  max-width: 900px;
+
+  // Override default kbd remove button with inline expanding style
+  .kbd-remove-btn {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 0;
+    height: 14px;
+    margin-left: 0;
+    padding: 0;
+    background: var(--kbd-text-secondary);
+    border-radius: 50%;
+    color: var(--kbd-bg);
+    font-size: 10px;
+    font-weight: bold;
+    line-height: 1;
+    opacity: 0;
+    overflow: hidden;
+    transform: none;
+    transition: width 0.15s, opacity 0.15s, margin 0.15s, background 0.15s;
+  }
+
+  .kbd-kbd:hover .kbd-remove-btn,
+  .kbd-kbd:focus-within .kbd-remove-btn {
+    width: 14px;
+    margin-left: 4px;
+    opacity: 1;
+  }
+
+  .kbd-remove-btn:hover {
+    background: var(--kbd-conflict);
+  }
+}
+
+.canvas-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.tool-group {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.group-label {
+  font-size: 0.75rem;
+  color: #888;
+  margin-right: 0.25rem;
+}
+
+.tool-btn {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-secondary);
+  border-radius: 4px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.875rem;
+
+  &:hover {
+    background: var(--bg-hover);
+  }
+
+  &.active {
+    background: #646cff;
+    border-color: #646cff;
+  }
+}
+
+.color-btn {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  &.active {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px #646cff;
+  }
+}
+
+.size-btn {
+  min-width: 2rem;
+  height: 1.75rem;
+  border: 1px solid var(--border-secondary);
+  border-radius: 4px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.75rem;
+
+  &:hover {
+    background: var(--bg-hover);
+  }
+
+  &.active {
+    background: #646cff;
+    border-color: #646cff;
+  }
+}
+
+.canvas-container {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.drawing-canvas {
+  display: block;
+  cursor: crosshair;
+}
+
+.canvas-status {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  color: #888;
+}

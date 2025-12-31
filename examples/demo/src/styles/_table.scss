@@ -1,0 +1,185 @@
+// Table Demo styles
+// Demonstrates: keyboard navigation, pagination, row selection
+
+.data-table-app {
+  width: 100%;
+  min-height: 100%;
+
+  > *:not(.kbd-backdrop) {
+    max-width: 600px;
+  }
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+
+  th,
+  td {
+    padding: 0.35rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  th {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+  }
+
+  tbody tr {
+    cursor: pointer;
+    transition: background 0.15s;
+    border-left: 3px solid transparent;
+
+    &.hovered {
+      background: var(--bg-tertiary);
+    }
+
+    &.selected {
+      background: var(--bg-selected);
+      border-left-color: var(--link-color);
+    }
+
+    &.hovered.selected {
+      background: var(--bg-selected);
+      filter: brightness(1.1);
+    }
+  }
+}
+
+// Pagination
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  .page-info {
+    margin: 0 0.5rem;
+    white-space: nowrap;
+  }
+}
+
+.pagination-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 4px;
+  padding: 0.3em 0.6em;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9em;
+  line-height: 1;
+
+  &:hover:not(:disabled) {
+    border-color: #646cff;
+    color: #646cff;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+// Page size dropdown
+.page-size-control {
+  position: relative;
+}
+
+.page-size-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 4px;
+  padding: 0.4em 0.8em;
+  color: inherit;
+  cursor: pointer;
+  font-size: inherit;
+
+  &:hover,
+  &.open {
+    border-color: #646cff;
+  }
+}
+
+.page-size-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 6px;
+  overflow: hidden;
+  z-index: 100;
+  min-width: 120px;
+}
+
+.page-size-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0.5em 0.8em;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: inherit;
+  text-align: left;
+
+  &:hover {
+    background: var(--bg-hover);
+  }
+
+  &.selected {
+    background: #252545;
+    color: #646cff;
+  }
+
+  &.focused {
+    outline: 2px solid #646cff;
+    outline-offset: -2px;
+  }
+}
+
+.page-size-key {
+  font-size: 0.75em;
+  background: #444;
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  border: 1px solid #555;
+}
+
+// Status badges
+.status-badge {
+  display: inline-block;
+  padding: 0.15em 0.5em;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: 500;
+
+  &.active {
+    background: #065f46;
+    color: #10b981;
+  }
+
+  &.pending {
+    background: #78350f;
+    color: #fbbf24;
+  }
+
+  &.inactive {
+    background: #374151;
+    color: #9ca3af;
+  }
+}
