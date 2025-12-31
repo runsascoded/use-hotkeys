@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { FaGithub, FaKeyboard } from 'react-icons/fa'
+import { MdBrightnessAuto, MdLightMode, MdDarkMode } from 'react-icons/md'
+import Tooltip from '@mui/material/Tooltip'
 import { useHotkeysContext } from 'use-kbd'
+import { useTheme } from '../contexts/ThemeContext'
 
 const GITHUB_BASE = 'https://github.com/runsascoded/use-kbd/tree/main/examples/demo/src/routes'
 
@@ -14,6 +17,7 @@ const ROUTE_FILES: Record<string, string> = {
 
 export function FloatingControls() {
   const ctx = useHotkeysContext()
+  const { theme, setTheme, resolvedTheme } = useTheme()
   const location = useLocation()
   const [isVisible, setIsVisible] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
@@ -51,6 +55,28 @@ export function FloatingControls() {
     }
   }, [])
 
+  const cycleTheme = () => {
+    if (theme === 'light') setTheme('dark')
+    else if (theme === 'dark') setTheme('system')
+    else setTheme('light')
+  }
+
+  const getThemeIcon = () => {
+    switch (theme) {
+      case 'light': return <MdLightMode />
+      case 'dark': return <MdDarkMode />
+      case 'system': return <MdBrightnessAuto />
+    }
+  }
+
+  const getThemeLabel = () => {
+    switch (theme) {
+      case 'light': return 'Light'
+      case 'dark': return 'Dark'
+      case 'system': return `System (${resolvedTheme})`
+    }
+  }
+
   const showControls = isVisible || isHovering
   const file = ROUTE_FILES[location.pathname] || 'Home.tsx'
   const githubUrl = `${GITHUB_BASE}/${file}`
@@ -62,26 +88,37 @@ export function FloatingControls() {
       onMouseLeave={() => setIsHovering(false)}
     >
       <div className={`floating-controls ${showControls ? 'visible' : ''}`}>
-        <a
-          href={githubUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="floating-btn github-link"
-          title="View source on GitHub"
-          aria-label="View source on GitHub"
-        >
-          <FaGithub />
-        </a>
-        {canHover && (
-          <button
-            className="floating-btn shortcuts-btn"
-            onClick={() => ctx.openModal()}
-            title="Keyboard shortcuts (?)"
-            aria-label="Show keyboard shortcuts"
+        <Tooltip title="View source on GitHub" arrow placement="top">
+          <a
+            href={githubUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="floating-btn github-link"
+            aria-label="View source on GitHub"
           >
-            <FaKeyboard />
-          </button>
+            <FaGithub />
+          </a>
+        </Tooltip>
+        {canHover && (
+          <Tooltip title="Keyboard shortcuts (?)" arrow placement="top">
+            <button
+              className="floating-btn shortcuts-btn"
+              onClick={() => ctx.openModal()}
+              aria-label="Show keyboard shortcuts"
+            >
+              <FaKeyboard />
+            </button>
+          </Tooltip>
         )}
+        <Tooltip title={`Theme: ${getThemeLabel()}`} arrow placement="top">
+          <button
+            className="floating-btn theme-btn"
+            onClick={cycleTheme}
+            aria-label={`Current theme: ${getThemeLabel()}. Click to cycle themes.`}
+          >
+            {getThemeIcon()}
+          </button>
+        </Tooltip>
       </div>
     </div>
   )

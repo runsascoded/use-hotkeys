@@ -2,12 +2,14 @@ import { Route, Routes, useLocation } from 'react-router-dom'
 import {
   HotkeysProvider,
   Omnibar,
+  SequenceModal,
   useAction,
   useHotkeysContext,
 } from 'use-kbd'
 import 'use-kbd/styles.css'
 import { ActionLink } from './components/ActionLink'
 import { FloatingControls } from './components/FloatingControls'
+import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { Home } from './routes/Home'
 import { TableDemo } from './routes/TableDemo'
 import { CanvasDemo } from './routes/CanvasDemo'
@@ -63,6 +65,13 @@ function AppNav() {
 
 function GlobalActions() {
   const ctx = useHotkeysContext()
+  const { theme, setTheme } = useTheme()
+
+  const cycleTheme = () => {
+    if (theme === 'light') setTheme('dark')
+    else if (theme === 'dark') setTheme('system')
+    else setTheme('light')
+  }
 
   useAction('global:0-help', {
     label: 'Show shortcuts',
@@ -76,6 +85,13 @@ function GlobalActions() {
     group: 'Global',
     defaultBindings: ['meta+k'],
     handler: () => ctx.openOmnibar(),
+  })
+
+  useAction('global:2-theme', {
+    label: 'Cycle theme',
+    group: 'Global',
+    defaultBindings: ['meta+shift+t'],
+    handler: cycleTheme,
   })
 
   return null
@@ -95,6 +111,7 @@ function AppContent() {
         </Routes>
       </main>
       <Omnibar />
+      <SequenceModal />
       <FloatingControls />
     </div>
   )
@@ -102,13 +119,15 @@ function AppContent() {
 
 export default function App() {
   return (
-    <HotkeysProvider
-      config={{
-        storageKey: 'use-kbd-demo',
-        sequenceTimeout: 1000,
-      }}
-    >
-      <AppContent />
-    </HotkeysProvider>
+    <ThemeProvider>
+      <HotkeysProvider
+        config={{
+          storageKey: 'use-kbd-demo',
+          sequenceTimeout: Infinity,
+        }}
+      >
+        <AppContent />
+      </HotkeysProvider>
+    </ThemeProvider>
   )
 }
