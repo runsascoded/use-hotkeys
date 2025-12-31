@@ -1,4 +1,4 @@
-import { Fragment, ReactNode } from 'react'
+import { Fragment, ReactNode, useEffect, useRef } from 'react'
 import { useMaybeHotkeysContext } from './HotkeysProvider'
 import { getKeyIcon } from './KeyIcons'
 import { ModifierIcon } from './ModifierIcons'
@@ -16,6 +16,8 @@ export interface KbdProps {
   fallback?: React.ReactNode
   /** Additional className */
   className?: string
+  /** Make the kbd clickable to trigger the action */
+  clickable?: boolean
 }
 
 /**
@@ -86,6 +88,9 @@ function BindingDisplay({ binding }: { binding: string }) {
  *
  * // With fallback when no binding exists
  * <Kbd action="customAction" fallback="(unbound)" />
+ *
+ * // Clickable kbd that triggers the action
+ * <p>Press <Kbd action="help" clickable /> to see shortcuts</p>
  * ```
  */
 export function Kbd({
@@ -94,30 +99,65 @@ export function Kbd({
   first = false,
   fallback = null,
   className,
+  clickable = false,
 }: KbdProps) {
   const ctx = useMaybeHotkeysContext()
+  const warnedRef = useRef(false)
+
+  const bindings = ctx
+    ? (first
+      ? [ctx.registry.getFirstBindingForAction(action)].filter(Boolean) as string[]
+      : ctx.registry.getBindingsForAction(action))
+    : []
+
+  // Warn about missing actions after mount (to allow time for registration)
+  useEffect(() => {
+    if (!ctx) return
+    if (warnedRef.current) return
+
+    const timer = setTimeout(() => {
+      if (!ctx.registry.actions.has(action)) {
+        console.warn(`Kbd: Action "${action}" not found in registry`)
+        warnedRef.current = true
+      }
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [ctx, action])
 
   if (!ctx) {
-    console.warn('Kbd: No HotkeysProvider found in component tree')
     return null
   }
-
-  const bindings = first
-    ? [ctx.registry.getFirstBindingForAction(action)].filter(Boolean) as string[]
-    : ctx.registry.getBindingsForAction(action)
 
   if (bindings.length === 0) {
     return <>{fallback}</>
   }
 
-  return (
-    <kbd className={className}>
-      {bindings.map((binding, i) => (
-        <Fragment key={binding}>
-          {i > 0 && separator}
-          <BindingDisplay binding={binding} />
-        </Fragment>
-      ))}
-    </kbd>
-  )
+  const content = bindings.map((binding, i) => (
+    <Fragment key={binding}>
+      {i > 0 && separator}
+      <BindingDisplay binding={binding} />
+    </Fragment>
+  ))
+
+  if (clickable) {
+    return (
+      <kbd
+        className={`${className || ''} kbd-clickable`.trim()}
+        onClick={() => ctx.executeAction(action)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            ctx.executeAction(action)
+          }
+        }}
+      >
+        {content}
+      </kbd>
+    )
+  }
+
+  return <kbd className={className}>{content}</kbd>
 }

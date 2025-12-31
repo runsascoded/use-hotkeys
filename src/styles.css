@@ -218,6 +218,22 @@
   margin: 0 1px;
 }
 
+/* === Clickable kbd === */
+.kbd-clickable {
+  cursor: pointer;
+  transition: all var(--kbd-transition);
+}
+
+.kbd-clickable:hover {
+  background: var(--kbd-accent);
+  color: white;
+}
+
+.kbd-clickable:focus-visible {
+  outline: 2px solid var(--kbd-accent);
+  outline-offset: 2px;
+}
+
 /* === Add binding button === */
 .kbd-add-btn {
   background: none;
