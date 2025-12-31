@@ -74,6 +74,8 @@ export interface HotkeysContextValue {
   searchActions: (query: string) => ReturnType<typeof searchActions>
   /** Get sequence completions for pending keys */
   getCompletions: (pendingKeys: HotkeySequence) => ReturnType<typeof getSequenceCompletions>
+  /** Cancel the current sequence */
+  cancelSequence: () => void
 }
 
 const HotkeysContext = createContext<HotkeysContextValue | null>(null)
@@ -238,6 +240,7 @@ export function HotkeysProvider({
   const {
     pendingKeys,
     isAwaitingSequence,
+    cancelSequence,
     timeoutStartedAt: sequenceTimeoutStartedAt,
     sequenceTimeout,
   } = useHotkeys(effectiveKeymap, handlers, {
@@ -271,6 +274,7 @@ export function HotkeysProvider({
     executeAction: registry.execute,
     pendingKeys,
     isAwaitingSequence,
+    cancelSequence,
     sequenceTimeoutStartedAt,
     sequenceTimeout,
     conflicts,
@@ -290,6 +294,7 @@ export function HotkeysProvider({
     toggleOmnibar,
     pendingKeys,
     isAwaitingSequence,
+    cancelSequence,
     sequenceTimeoutStartedAt,
     sequenceTimeout,
     conflicts,

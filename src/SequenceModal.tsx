@@ -7,6 +7,7 @@ export function SequenceModal() {
   const {
     pendingKeys,
     isAwaitingSequence,
+    cancelSequence,
     sequenceTimeoutStartedAt: timeoutStartedAt,
     sequenceTimeout,
     getCompletions,
@@ -53,8 +54,8 @@ export function SequenceModal() {
   }
 
   return (
-    <div className="kbd-sequence-backdrop">
-      <div className="kbd-sequence">
+    <div className="kbd-sequence-backdrop" onClick={cancelSequence}>
+      <div className="kbd-sequence" onClick={e => e.stopPropagation()}>
         {/* Current sequence at top */}
         <div className="kbd-sequence-current">
           <kbd className="kbd-sequence-keys">{formattedPendingKeys}</kbd>
