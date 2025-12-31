@@ -4,7 +4,6 @@ import {
   Kbd,
   ShortcutsModal,
   useAction,
-  useHotkeysContext,
 } from 'use-kbd'
 import 'use-kbd/styles.css'
 
@@ -32,8 +31,6 @@ type SortDirection = 'asc' | 'desc' | null
 type SortColumn = 'name' | 'status' | 'value'
 
 function DataTable() {
-  const ctx = useHotkeysContext()
-
   const [data, setData] = useState<DataRow[]>(INITIAL_DATA)
   const [history, setHistory] = useState<DataRow[][]>([]) // for undo
   // Multi-select state: hoveredIndex is cursor position, selectedIds is the selection set

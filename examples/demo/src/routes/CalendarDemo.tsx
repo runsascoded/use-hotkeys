@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { Kbd, ShortcutsModal, useAction, useHotkeysContext } from 'use-kbd'
+import { Kbd, ShortcutsModal, useAction } from 'use-kbd'
 import 'use-kbd/styles.css'
 
 type ViewMode = 'month' | 'week' | 'day'
@@ -14,7 +14,6 @@ interface CalendarEvent {
 const EVENT_COLORS = ['#ef4444', '#f97316', '#22c55e', '#3b82f6', '#a855f7']
 
 function Calendar() {
-  const ctx = useHotkeysContext()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>('month')
@@ -233,7 +232,7 @@ function Calendar() {
     <div className="calendar-app">
       <h1>Calendar Demo</h1>
       <p className="hint">
-        Press <Kbd action="global:0-help" /> for shortcuts. Use arrow keys or hjkl to navigate days.
+        Press <Kbd action="global:0-help" /> for shortcuts.
       </p>
 
       <div className="calendar-header">
@@ -293,15 +292,17 @@ function Calendar() {
 
       {viewMode === 'week' && (
         <div className="week-view">
-          <p className="view-placeholder">Week view: {selectedDate.toLocaleDateString()}</p>
-          <p>Navigate with arrow keys, [ ] to change weeks</p>
+          <p className="view-placeholder">
+            Week of {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          </p>
         </div>
       )}
 
       {viewMode === 'day' && (
         <div className="day-view">
-          <p className="view-placeholder">Day view: {selectedDate.toLocaleDateString()}</p>
-          <p>Navigate with h/l or left/right arrows</p>
+          <p className="view-placeholder">
+            {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </p>
         </div>
       )}
 

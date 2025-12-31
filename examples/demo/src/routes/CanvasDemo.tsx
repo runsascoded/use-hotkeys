@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Kbd, ShortcutsModal, useAction, useHotkeysContext } from 'use-kbd'
+import { Kbd, ShortcutsModal, useAction } from 'use-kbd'
 import 'use-kbd/styles.css'
 
 type Tool = 'pen' | 'eraser' | 'line' | 'rect' | 'circle'
@@ -32,7 +32,6 @@ const COLORS = [
 const SIZES = [2, 4, 8, 16, 32]
 
 function Canvas() {
-  const ctx = useHotkeysContext()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [tool, setTool] = useState<Tool>('pen')
   const [color, setColor] = useState('#000000')
