@@ -2,10 +2,10 @@ name: Demo CI & Deploy
 on:
   push:
     branches: [main]
-    paths: ['examples/demo/**', '.github/workflows/demo-deploy.yml', 'src/**']
+    paths: ['site/**', '.github/workflows/demo-deploy.yml', 'src/**']
   pull_request:
     branches: [main]
-    paths: ['examples/demo/**', '.github/workflows/demo-deploy.yml', 'src/**']
+    paths: ['site/**', '.github/workflows/demo-deploy.yml', 'src/**']
   workflow_dispatch:
 
 permissions:
@@ -40,23 +40,23 @@ jobs:
         run: pnpm run build
 
       - name: Install demo dependencies
-        working-directory: ./examples/demo
+        working-directory: ./site
         run: pnpm install
 
       - name: Lint demo
-        working-directory: ./examples/demo
+        working-directory: ./site
         run: pnpm run lint
 
       - name: Build demo
-        working-directory: ./examples/demo
+        working-directory: ./site
         run: pnpm run build
 
       - name: Install Playwright browsers
-        working-directory: ./examples/demo
+        working-directory: ./site
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run E2E tests
-        working-directory: ./examples/demo
+        working-directory: ./site
         run: pnpm run test
 
       - name: Upload test report
@@ -64,7 +64,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: examples/demo/playwright-report/
+          path: site/playwright-report/
           retention-days: 7
 
       - name: Setup Pages
@@ -75,7 +75,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./examples/demo/dist
+          path: ./docs
 
   deploy:
     runs-on: ubuntu-latest

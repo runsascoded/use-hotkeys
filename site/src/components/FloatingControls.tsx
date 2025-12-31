@@ -6,7 +6,7 @@ import Tooltip from '@mui/material/Tooltip'
 import { useHotkeysContext } from 'use-kbd'
 import { useTheme } from '../contexts/ThemeContext'
 
-const GITHUB_BASE = 'https://github.com/runsascoded/use-kbd/tree/main/examples/demo/src/routes'
+const GITHUB_BASE = 'https://github.com/runsascoded/use-kbd/tree/main/site/src/routes'
 
 const ROUTE_FILES: Record<string, string> = {
   '/': 'Home.tsx',

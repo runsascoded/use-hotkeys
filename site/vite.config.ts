@@ -8,4 +8,8 @@ export default defineConfig({
     { enforce: 'pre', ...mdx() },
     react({ include: /\.(jsx|js|mdx|md|tsx|ts)$/ }),
   ],
+  build: {
+    outDir: '../docs',
+    emptyOutDir: true,
+  },
 })
