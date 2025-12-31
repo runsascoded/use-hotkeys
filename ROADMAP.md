@@ -297,3 +297,94 @@ Expose customization:
 - `src/App.tsx` - Simplified
 - `src/hooks/useKeyboardShortcuts.ts` - Deleted or simplified
 - `src/components/ShortcutsModalContent.tsx` - Only paired layout
+
+## Future Ideas
+
+### Key Sequence Rendering
+
+**Problem**: Users may not recognize modifier key icons (⌘, ⌃, ⌥, ⇧).
+
+**Solution**: Support multiple rendering modes via a `SequenceRenderer` interface:
+
+1. **Icons** (default): `⌘ ↓` - Current SVG icon approach
+2. **Short/Emacs**: `C-↓` or `M-↓` - Compact text notation
+3. **Full text**: `ctrl down` - Fully spelled out
+
+Configuration options:
+```tsx
+// App-level default
+<HotkeysProvider config={{ sequenceFormat: 'icons' }}>
+
+// Or per-modal
+<ShortcutsModal sequenceFormat="full" />
+
+// Or custom renderer
+<ShortcutsModal sequenceRenderer={MyCustomRenderer} />
+```
+
+**Tooltips**: Hovering over a key sequence should show a tooltip with the full text version (e.g., "ctrl down"). This helps users learn the icons. Consider:
+- Using MUI Tooltip or similar (avoid browser-native tooltips - too slow)
+- Allow users to pass a custom `TooltipComponent` prop
+- Toggle between icon/text modes on hover vs click (awair "auto-range" pattern)
+
+### Advanced Omnibar / Command Palette
+
+**Goal**: Make the omnibar a universal search/navigation hub, not just action execution.
+
+**Result providers**: The omnibar could support multiple result sources:
+```tsx
+<Omnibar
+  resultProviders={[
+    { type: 'actions', priority: 1 },  // Default - registered actions
+    { type: 'search', query: async (q) => searchAPI(q), priority: 2 },
+    { type: 'links', selector: 'a[data-omnibar]', priority: 3 },
+  ]}
+/>
+```
+
+**Use cases**:
+1. **Site navigation**: Register routes as actions (already works!)
+2. **Page links**: Auto-register `<a>` elements with `data-omnibar` attribute
+3. **Site search**: Integrate with Algolia, Pagefind, or similar search backends
+4. **Recent items**: Show recently executed actions or visited pages
+
+**ActionLink component**: A `<Link>` that auto-registers as an omnibar-discoverable action:
+```tsx
+<ActionLink to="/docs" label="Documentation" keywords={['help', 'guide']}>
+  Docs
+</ActionLink>
+```
+
+### Modal Trigger Button
+
+**Problem**: Users may not know how to open the shortcuts modal.
+
+**Solution**: Provide a pre-built trigger button component:
+```tsx
+// Lower-right corner popup (awair/ctbk style)
+<ShortcutsTrigger position="bottom-right" />
+
+// Or hamburger menu item
+<ShortcutsTrigger as="menu-item" />
+```
+
+The button could:
+- Show on hover in corner (like awair)
+- Display the trigger key (`?`) as a hint
+- Fade in/out gracefully
+
+### Static Site Deployment
+
+Deploy examples at `use-kbd.rbw.sh`:
+- GitHub Action for building and deploying
+- Examples should link back to source code on GitHub
+- Consider versioned deployments for major releases
+
+### Action Sort Order
+
+**Problem**: Actions within a group sort alphabetically by ID, which can produce unintuitive ordering (e.g., `pagesize:100` before `pagesize:20`).
+
+**Solutions**:
+1. Use numeric prefixes in action IDs: `pagesize:1-10`, `pagesize:2-20`
+2. Add `sortOrder` or `priority` field to `ActionConfig`
+3. Allow groups to specify action order explicitly
