@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { useUrlParam } from '@rdub/use-url-params'
 
 type Theme = 'light' | 'dark' | 'system'
 
@@ -17,9 +18,23 @@ function getSystemTheme(): 'light' | 'dark' {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
+// URL param only supports light/dark for screenshots, not system
+type UrlTheme = 'light' | 'dark' | undefined
+const urlThemeParam = {
+  encode: (v: UrlTheme) => v,
+  decode: (s: string | undefined): UrlTheme => {
+    if (s === 'light' || s === 'dark') return s
+    return undefined
+  }
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  // URL param can force theme (for screenshots)
+  const [urlTheme] = useUrlParam('theme', urlThemeParam)
+
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window === 'undefined') return 'system'
+    if (urlTheme === 'light' || urlTheme === 'dark') return urlTheme
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null
     return stored || 'system'
   })
