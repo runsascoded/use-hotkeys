@@ -350,6 +350,7 @@ function Canvas() {
 
       <ShortcutsModal
         editable
+        multipleBindings={false}
         groupOrder={['Tools', 'Colors', 'Brush Size', 'Edit', 'Global', 'Navigation']}
       />
     </div>

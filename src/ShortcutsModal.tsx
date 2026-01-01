@@ -524,6 +524,8 @@ export function ShortcutsModal({
   const editingActionRef = useRef<string | null>(null)
   const editingKeyRef = useRef<string | null>(null)
   const addingActionRef = useRef<string | null>(null)
+  const setIsEditingBindingRef = useRef(ctx?.setIsEditingBinding)
+  setIsEditingBindingRef.current = ctx?.setIsEditingBinding
 
   // Compute conflicts
   const conflicts = useMemo(() => findConflicts(keymap), [keymap])
@@ -630,6 +632,7 @@ export function ShortcutsModal({
         setEditingAction(null)
         setEditingKey(null)
         setAddingAction(null)
+        setIsEditingBindingRef.current?.(false)
       },
       [checkConflict, handleBindingChange, handleBindingAdd],
     ),
@@ -641,6 +644,7 @@ export function ShortcutsModal({
       setEditingKey(null)
       setAddingAction(null)
       setPendingConflict(null)
+      setIsEditingBindingRef.current?.(false)
     }, []),
     // Tab to next/prev editable kbd and start editing
     onTab: useCallback(() => {
@@ -681,9 +685,10 @@ export function ShortcutsModal({
       setEditingAction(action)
       setEditingKey(key)
       setPendingConflict(null)
+      ctx?.setIsEditingBinding(true)
       startRecording()
     },
-    [startRecording],
+    [startRecording, ctx?.setIsEditingBinding],
   )
 
   // Start adding a new binding to an action
@@ -698,9 +703,10 @@ export function ShortcutsModal({
       setEditingKey(null)
       setAddingAction(action)
       setPendingConflict(null)
+      ctx?.setIsEditingBinding(true)
       startRecording()
     },
-    [startRecording],
+    [startRecording, ctx?.setIsEditingBinding],
   )
 
   // Legacy startEditing for backwards compatibility
@@ -725,7 +731,8 @@ export function ShortcutsModal({
     setEditingKey(null)
     setAddingAction(null)
     setPendingConflict(null)
-  }, [cancel])
+    ctx?.setIsEditingBinding(false)
+  }, [cancel, ctx?.setIsEditingBinding])
 
   const removeBinding = useCallback(
     (action: string, key: string) => {
@@ -887,6 +894,8 @@ export function ShortcutsModal({
   // Helper: render a cell with all bindings for an action
   const renderCell = useCallback(
     (actionId: string, keys: string[]) => {
+      // Show add button if: multiple bindings allowed, OR no bindings exist (need to reassign)
+      const showAddButton = editable && (multipleBindings || keys.length === 0)
       return (
         <span className="kbd-action-bindings">
           {keys.map((key) => (
@@ -894,7 +903,7 @@ export function ShortcutsModal({
               {renderEditableKbd(actionId, key, true)}
             </Fragment>
           ))}
-          {editable && multipleBindings && renderAddButton(actionId)}
+          {showAddButton && renderAddButton(actionId)}
         </span>
       )
     },

@@ -1,11 +1,45 @@
 // Calendar Demo styles
 // Demonstrates: date navigation, view switching, event display
 
-// Route-scoped sequence modal styling (compact rows for calendar's many options)
+// Route-scoped styling for calendar demo
 .route-calendar {
+  // Compact sequence modal rows (calendar has many options)
   --kbd-sequence-max-height: 50vh;
   --kbd-sequence-row-padding: 4px 10px;
   --kbd-sequence-row-gap: 4px;
+
+  // Override default kbd remove button with inline expanding style
+  .kbd-remove-btn {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 0;
+    height: 14px;
+    margin-left: 0;
+    padding: 0;
+    background: var(--kbd-text-secondary);
+    border-radius: 50%;
+    color: var(--kbd-bg);
+    font-size: 10px;
+    font-weight: bold;
+    line-height: 1;
+    opacity: 0;
+    overflow: hidden;
+    transform: none;
+    transition: width 0.15s, opacity 0.15s, margin 0.15s, background 0.15s;
+  }
+
+  .kbd-kbd:hover .kbd-remove-btn,
+  .kbd-kbd:focus-within .kbd-remove-btn {
+    width: 14px;
+    margin-left: 4px;
+    opacity: 1;
+  }
+
+  .kbd-remove-btn:hover {
+    background: var(--kbd-conflict);
+  }
 }
 
 .calendar-app {

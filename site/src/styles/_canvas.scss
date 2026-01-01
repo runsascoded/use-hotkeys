@@ -3,39 +3,6 @@
 
 .canvas-app {
   max-width: 900px;
-
-  // Override default kbd remove button with inline expanding style
-  .kbd-remove-btn {
-    position: static;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 0;
-    height: 14px;
-    margin-left: 0;
-    padding: 0;
-    background: var(--kbd-text-secondary);
-    border-radius: 50%;
-    color: var(--kbd-bg);
-    font-size: 10px;
-    font-weight: bold;
-    line-height: 1;
-    opacity: 0;
-    overflow: hidden;
-    transform: none;
-    transition: width 0.15s, opacity 0.15s, margin 0.15s, background 0.15s;
-  }
-
-  .kbd-kbd:hover .kbd-remove-btn,
-  .kbd-kbd:focus-within .kbd-remove-btn {
-    width: 14px;
-    margin-left: 4px;
-    opacity: 1;
-  }
-
-  .kbd-remove-btn:hover {
-    background: var(--kbd-conflict);
-  }
 }
 
 .canvas-toolbar {

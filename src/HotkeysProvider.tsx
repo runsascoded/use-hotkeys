@@ -56,6 +56,10 @@ export interface HotkeysContextValue {
   closeOmnibar: () => void
   /** Toggle the omnibar */
   toggleOmnibar: () => void
+  /** Whether currently editing a binding in ShortcutsModal */
+  isEditingBinding: boolean
+  /** Set editing state (called by ShortcutsModal) */
+  setIsEditingBinding: (value: boolean) => void
   /** Execute an action by ID */
   executeAction: (id: string) => void
   /** Sequence state: pending key combinations */
@@ -188,6 +192,9 @@ export function HotkeysProvider({
   const closeOmnibar = useCallback(() => setIsOmnibarOpen(false), [])
   const toggleOmnibar = useCallback(() => setIsOmnibarOpen(prev => !prev), [])
 
+  // Editing binding state (set by ShortcutsModal when recording a new binding)
+  const [isEditingBinding, setIsEditingBinding] = useState(false)
+
   // Build keymap with built-in triggers
   const keymap = useMemo(() => {
     const map = { ...registry.keymap }
@@ -235,8 +242,8 @@ export function HotkeysProvider({
     return map
   }, [registry.actions, toggleModal, toggleOmnibar])
 
-  // Register hotkeys
-  const hotkeysEnabled = isEnabled && !isModalOpen && !isOmnibarOpen
+  // Register hotkeys (enabled unless editing a binding or omnibar is open)
+  const hotkeysEnabled = isEnabled && !isEditingBinding && !isOmnibarOpen
   const {
     pendingKeys,
     isAwaitingSequence,
@@ -271,6 +278,8 @@ export function HotkeysProvider({
     openOmnibar,
     closeOmnibar,
     toggleOmnibar,
+    isEditingBinding,
+    setIsEditingBinding,
     executeAction: registry.execute,
     pendingKeys,
     isAwaitingSequence,
@@ -292,6 +301,7 @@ export function HotkeysProvider({
     openOmnibar,
     closeOmnibar,
     toggleOmnibar,
+    isEditingBinding,
     pendingKeys,
     isAwaitingSequence,
     cancelSequence,
