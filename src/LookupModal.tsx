@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHotkeysContext } from './HotkeysProvider'
-import type { HotkeySequence, KeyCombination, SequenceCompletion } from './types'
+import { useAction } from './useAction'
+import type { HotkeySequence, KeyCombination } from './types'
 import { formatCombination, parseHotkeyString, normalizeKey, isModifierKey } from './utils'
 
 interface LookupResult {
@@ -9,6 +10,15 @@ interface LookupResult {
   display: string
   actions: string[]
   labels: string[]
+}
+
+export interface LookupModalProps {
+  /**
+   * Default keybinding to open lookup modal (default: 'meta+shift+k').
+   * Users can override this in the shortcuts modal.
+   * Set to empty string to disable.
+   */
+  defaultBinding?: string
 }
 
 /**
@@ -23,13 +33,22 @@ interface LookupResult {
  * - Press Escape to close or clear filter
  * - Press Backspace to remove last key from filter
  */
-export function LookupModal() {
+export function LookupModal({ defaultBinding = 'meta+shift+k' }: LookupModalProps = {}) {
   const {
     isLookupOpen,
     closeLookup,
+    toggleLookup,
     registry,
     executeAction,
   } = useHotkeysContext()
+
+  // Register the lookup modal trigger action
+  useAction('__hotkeys:lookup', {
+    label: 'Key lookup',
+    group: 'Global',
+    defaultBindings: defaultBinding ? [defaultBinding] : [],
+    handler: useCallback(() => toggleLookup(), [toggleLookup]),
+  })
 
   // Internal pending keys state (separate from global)
   const [pendingKeys, setPendingKeys] = useState<HotkeySequence>([])

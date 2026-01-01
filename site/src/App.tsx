@@ -5,7 +5,6 @@ import {
   Omnibar,
   SequenceModal,
   useAction,
-  useHotkeysContext,
 } from 'use-kbd'
 import 'use-kbd/styles.css'
 import { ActionLink } from './components/ActionLink'
@@ -66,7 +65,6 @@ function AppNav() {
 }
 
 function GlobalActions() {
-  const ctx = useHotkeysContext()
   const { theme, setTheme } = useTheme()
 
   const cycleTheme = () => {
@@ -75,28 +73,9 @@ function GlobalActions() {
     else setTheme('light')
   }
 
-  useAction('global:0-help', {
-    label: 'Show shortcuts',
-    group: 'Global',
-    defaultBindings: ['?'],
-    handler: () => ctx.toggleModal(),
-  })
-
-  useAction('global:1-omnibar', {
-    label: 'Command palette',
-    group: 'Global',
-    defaultBindings: ['meta+k'],
-    handler: () => ctx.openOmnibar(),
-  })
-
-  useAction('global:2-lookup', {
-    label: 'Key lookup',
-    group: 'Global',
-    defaultBindings: ['meta+shift+k'],
-    handler: () => ctx.openLookup(),
-  })
-
-  useAction('global:3-theme', {
+  // Note: Show shortcuts, Command palette, and Key lookup are now
+  // registered by their respective components (ShortcutsModal, Omnibar, LookupModal)
+  useAction('global:theme', {
     label: 'Cycle theme',
     group: 'Global',
     defaultBindings: ['T'],

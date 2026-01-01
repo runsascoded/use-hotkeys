@@ -24,15 +24,6 @@ export interface HotkeysConfig {
 
   /** Whether to show hotkey UI on touch-only devices (default: false) */
   enableOnTouch?: boolean
-
-  /** Key sequence to open shortcuts modal (false to disable) */
-  modalTrigger?: string | false
-
-  /** Key sequence to open omnibar (false to disable) */
-  omnibarTrigger?: string | false
-
-  /** Key sequence to open lookup modal (false to disable) */
-  lookupTrigger?: string | false
 }
 
 /**
@@ -101,9 +92,6 @@ const DEFAULT_CONFIG: Required<HotkeysConfig> = {
   disableConflicts: true,
   minViewportWidth: 768,
   enableOnTouch: false,
-  modalTrigger: '?',
-  omnibarTrigger: 'meta+k',
-  lookupTrigger: 'meta+shift+k',
 }
 
 export interface HotkeysProviderProps {
@@ -213,22 +201,8 @@ export function HotkeysProvider({
   // Editing binding state (set by ShortcutsModal when recording a new binding)
   const [isEditingBinding, setIsEditingBinding] = useState(false)
 
-  // Build keymap with built-in triggers
-  const keymap = useMemo(() => {
-    const map = { ...registry.keymap }
-
-    if (config.modalTrigger !== false) {
-      map[config.modalTrigger] = '__hotkeys:modal'
-    }
-    if (config.omnibarTrigger !== false) {
-      map[config.omnibarTrigger] = '__hotkeys:omnibar'
-    }
-    if (config.lookupTrigger !== false) {
-      map[config.lookupTrigger] = '__hotkeys:lookup'
-    }
-
-    return map
-  }, [registry.keymap, config.modalTrigger, config.omnibarTrigger, config.lookupTrigger])
+  // Use registry keymap directly
+  const keymap = registry.keymap
 
   // Compute conflicts
   const conflicts = useMemo(() => findConflicts(keymap), [keymap])
@@ -248,7 +222,7 @@ export function HotkeysProvider({
     return filtered
   }, [keymap, conflicts, config.disableConflicts])
 
-  // Build handlers map
+  // Build handlers map from registered actions
   const handlers = useMemo(() => {
     const map: Record<string, () => void> = {}
 
@@ -256,13 +230,8 @@ export function HotkeysProvider({
       map[id] = action.config.handler
     }
 
-    // Built-in triggers
-    map['__hotkeys:modal'] = toggleModal
-    map['__hotkeys:omnibar'] = toggleOmnibar
-    map['__hotkeys:lookup'] = toggleLookup
-
     return map
-  }, [registry.actions, toggleModal, toggleOmnibar, toggleLookup])
+  }, [registry.actions])
 
   // Register hotkeys (enabled unless editing a binding, omnibar, or lookup is open)
   const hotkeysEnabled = isEnabled && !isEditingBinding && !isOmnibarOpen && !isLookupOpen

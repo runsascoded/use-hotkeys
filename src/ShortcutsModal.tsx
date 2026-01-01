@@ -3,6 +3,7 @@ import { DEFAULT_SEQUENCE_TIMEOUT } from './constants'
 import { useMaybeHotkeysContext } from './HotkeysProvider'
 import { getKeyIcon } from './KeyIcons'
 import { ModifierIcon } from './ModifierIcons'
+import { useAction } from './useAction'
 import { useHotkeys } from './useHotkeys'
 import { useRecordHotkey } from './useRecordHotkey'
 import { findConflicts, formatCombination, formatKeyForDisplay, getActionBindings, parseHotkeyString } from './utils'
@@ -87,13 +88,12 @@ export interface ShortcutsModalProps {
    * If not provided, uses closeModal from HotkeysContext.
    */
   onClose?: () => void
-  /** Hotkey to open modal (default: '?'). Set to empty string to disable. */
-  openKey?: string
   /**
-   * Whether to auto-register the open hotkey (default: true).
-   * When using HotkeysContext, the provider already handles this, so set to false.
+   * Default keybinding to open shortcuts modal (default: '?').
+   * Users can override this in the shortcuts modal.
+   * Set to empty string to disable.
    */
-  autoRegisterOpen?: boolean
+  defaultBinding?: string
   /** Enable editing mode */
   editable?: boolean
   /** Called when a binding changes (required if editable) */
@@ -426,8 +426,7 @@ export function ShortcutsModal({
   groupRenderers,
   isOpen: isOpenProp,
   onClose: onCloseProp,
-  openKey = '?',
-  autoRegisterOpen,
+  defaultBinding = '?',
   editable = false,
   onBindingChange,
   onBindingAdd,
@@ -501,9 +500,6 @@ export function ShortcutsModal({
     ctx.registry.resetOverrides()
   } : undefined)
 
-  // When using context, default autoRegisterOpen to false (HotkeysProvider handles it)
-  const shouldAutoRegisterOpen = autoRegisterOpen ?? !ctx
-
   const [internalIsOpen, setInternalIsOpen] = useState(false)
   // Use prop, then context, then internal state
   const isOpen = isOpenProp ?? ctx?.isModalOpen ?? internalIsOpen
@@ -555,6 +551,14 @@ export function ShortcutsModal({
       setInternalIsOpen(true)
     }
   }, [ctx])
+
+  // Register the shortcuts modal trigger action
+  useAction('__hotkeys:modal', {
+    label: 'Show shortcuts',
+    group: 'Global',
+    defaultBindings: defaultBinding ? [defaultBinding] : [],
+    handler: useCallback(() => ctx?.toggleModal() ?? setInternalIsOpen(prev => !prev), [ctx?.toggleModal]),
+  })
 
   // Check if a new binding would conflict
   const checkConflict = useCallback((newKey: string, forAction: string): string[] | null => {
@@ -924,15 +928,11 @@ export function ShortcutsModal({
     addingAction,
   }), [renderCell, renderEditableKbd, renderAddButton, startEditingBinding, startAddingBinding, removeBinding, isRecording, editingAction, editingKey, addingAction])
 
-  // Register open/close hotkeys
-  const modalKeymap = shouldAutoRegisterOpen ? { [openKey]: 'openShortcuts' } : {}
+  // Register Escape to close modal (trigger is handled via useAction)
   useHotkeys(
-    { ...modalKeymap, escape: 'closeShortcuts' },
-    {
-      openShortcuts: open,
-      closeShortcuts: close,
-    },
-    { enabled: shouldAutoRegisterOpen || isOpen },
+    { escape: 'closeShortcuts' },
+    { closeShortcuts: close },
+    { enabled: isOpen },
   )
 
   // Close on Escape during editing
