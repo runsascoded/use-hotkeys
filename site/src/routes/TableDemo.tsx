@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   createTwoColumnRenderer,
-  Kbd,
+  KbdModal,
   ShortcutsModal,
   useAction,
 } from 'use-kbd'
@@ -504,7 +504,7 @@ function DataTable() {
     <div className="data-table-app" ref={containerRef}>
       <h1 id="demo">Data Table Demo</h1>
       <p className="hint">
-        Press <Kbd action="__hotkeys:modal" /> for shortcuts.
+        Press <KbdModal /> for shortcuts.
         {selectedIds.size > 1 && <strong> ({selectedIds.size} selected)</strong>}
       </p>
 

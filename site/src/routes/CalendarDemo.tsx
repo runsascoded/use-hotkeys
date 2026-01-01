@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { Kbd, ShortcutsModal, useAction } from 'use-kbd'
+import { KbdModal, ShortcutsModal, useAction } from 'use-kbd'
 import 'use-kbd/styles.css'
 
 type ViewMode = 'month' | 'week' | 'day'
@@ -326,7 +326,7 @@ function Calendar() {
     <div className="calendar-app">
       <h1 id="demo">Calendar Demo</h1>
       <p className="hint">
-        Press <Kbd action="__hotkeys:modal" /> for shortcuts.
+        Press <KbdModal /> for shortcuts.
       </p>
 
       <div className="calendar-header">

@@ -1,6 +1,6 @@
 import { Tooltip } from '@mui/material'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Kbd, ShortcutsModal, useAction, useActions } from 'use-kbd'
+import { Kbd, KbdModal, ShortcutsModal, useAction, useActions } from 'use-kbd'
 import 'use-kbd/styles.css'
 import { useTheme } from '../contexts/ThemeContext'
 
@@ -306,7 +306,7 @@ function Canvas() {
     <div className="canvas-app">
       <h1 id="demo">Canvas Demo</h1>
       <p className="hint">
-        Press <Kbd action="__hotkeys:modal" /> for shortcuts. Draw with mouse, use number keys for colors.
+        Press <KbdModal /> for shortcuts. Draw with mouse, use number keys for colors.
       </p>
 
       <div className="canvas-toolbar">
