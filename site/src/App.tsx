@@ -91,7 +91,7 @@ function GlobalActions() {
   useAction('global:2-theme', {
     label: 'Cycle theme',
     group: 'Global',
-    defaultBindings: ['meta+shift+t'],
+    defaultBindings: ['T'],
     handler: cycleTheme,
   })
 
