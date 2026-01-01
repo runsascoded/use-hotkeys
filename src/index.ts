@@ -41,7 +41,7 @@ export { useEditableHotkeys } from './useEditableHotkeys'
 export { useOmnibar } from './useOmnibar'
 
 // Components
-export { Kbd } from './Kbd'
+export { Kbd, Key } from './Kbd'
 export type { KbdProps } from './Kbd'
 export { KeybindingEditor } from './KeybindingEditor'
 export { Omnibar } from './Omnibar'

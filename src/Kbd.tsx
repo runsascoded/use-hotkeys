@@ -70,27 +70,27 @@ function BindingDisplay({ binding }: { binding: string }) {
 }
 
 /**
- * Display the current binding(s) for an action.
+ * Display the current binding(s) for an action (clickable by default).
  *
  * Automatically updates when users customize their bindings.
  * Uses SVG icons for modifiers (⌘, ⌥, ⇧, ⌃) and special keys (arrows, enter, etc.)
  *
  * @example
  * ```tsx
- * // Show all bindings for an action
+ * // Clickable kbd that triggers the action (default)
  * <p>Press <Kbd action="help" /> to see shortcuts</p>
+ *
+ * // Non-clickable for pure display (use Key alias or clickable={false})
+ * <p>Navigate with <Key action="next" /> to go to next item</p>
  *
  * // Show only the first binding
  * <p>Press <Kbd action="next" first /> to go to next item</p>
  *
  * // Custom separator for multiple bindings
- * <p>Navigate with <Kbd action="next" separator=" or " /></p>
+ * <p>Navigate with <Key action="next" separator=" or " /></p>
  *
  * // With fallback when no binding exists
  * <Kbd action="customAction" fallback="(unbound)" />
- *
- * // Clickable kbd that triggers the action
- * <p>Press <Kbd action="help" clickable /> to see shortcuts</p>
  * ```
  */
 export function Kbd({
@@ -99,7 +99,7 @@ export function Kbd({
   first = false,
   fallback = null,
   className,
-  clickable = false,
+  clickable = true,
 }: KbdProps) {
   const ctx = useMaybeHotkeysContext()
   const warnedRef = useRef(false)
@@ -160,4 +160,12 @@ export function Kbd({
   }
 
   return <kbd className={className}>{content}</kbd>
+}
+
+/**
+ * Non-clickable variant of Kbd for pure display/documentation purposes.
+ * Alias for `<Kbd clickable={false} ... />`
+ */
+export function Key(props: Omit<KbdProps, 'clickable'>) {
+  return <Kbd {...props} clickable={false} />
 }
