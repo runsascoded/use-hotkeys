@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { max, min } from '@rdub/base'
 import { useHotkeys, HotkeyMap, HandlerMap } from './useHotkeys'
+
+const { max, min } = Math
 import { searchActions, getSequenceCompletions } from './utils'
 import type { ActionRegistry, ActionSearchResult, HotkeySequence } from './types'
 import type { SequenceCompletion } from './types'

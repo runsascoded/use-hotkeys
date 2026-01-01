@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@rdub/base':
-        specifier: https://gitlab.com/runsascoded/js/base/-/archive/d25db27a5640bdbb1e451955194694b62d5bcf39/base-d25db27a5640bdbb1e451955194694b62d5bcf39.tar.gz
-        version: https://gitlab.com/runsascoded/js/base/-/archive/d25db27a5640bdbb1e451955194694b62d5bcf39/base-d25db27a5640bdbb1e451955194694b62d5bcf39.tar.gz(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-dom:
         specifier: '>=18.0.0'
         version: 18.3.1(react@18.3.1)
@@ -523,13 +520,6 @@ packages:
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
-
-  '@rdub/base@https://gitlab.com/runsascoded/js/base/-/archive/d25db27a5640bdbb1e451955194694b62d5bcf39/base-d25db27a5640bdbb1e451955194694b62d5bcf39.tar.gz':
-    resolution: {tarball: https://gitlab.com/runsascoded/js/base/-/archive/d25db27a5640bdbb1e451955194694b62d5bcf39/base-d25db27a5640bdbb1e451955194694b62d5bcf39.tar.gz}
-    version: 0.8.1-dist.f2aab65
-    peerDependencies:
-      react: '>=18'
-      react-dom: '>=18'
 
   '@rdub/eslint-config@0.0.3':
     resolution: {integrity: sha512-RPLHdNqZqdqJ2N/e+s2QbbVj/JnM+49kAbqz/+J1wAGDiH77629fSDJXinPL+xmA4c0euBJ4KP2neAY6BLPiOg==}
@@ -2418,12 +2408,6 @@ snapshots:
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
-
-  '@rdub/base@https://gitlab.com/runsascoded/js/base/-/archive/d25db27a5640bdbb1e451955194694b62d5bcf39/base-d25db27a5640bdbb1e451955194694b62d5bcf39.tar.gz(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      node-fetch: 3.3.2
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
 
   '@rdub/eslint-config@0.0.3(eslint@9.39.2)(typescript@5.9.3)':
     dependencies:

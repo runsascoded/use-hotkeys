@@ -1,5 +1,6 @@
-import { max } from '@rdub/base'
 import type { KeyCombination, KeyCombinationDisplay, HotkeySequence } from './types'
+
+const { max } = Math
 
 /**
  * Detect if running on macOS
