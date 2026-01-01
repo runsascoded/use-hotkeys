@@ -4,6 +4,7 @@
 .data-table-app {
   width: 100%;
   min-height: 100%;
+  padding: 0 1rem;
 
   > *:not(.kbd-backdrop) {
     max-width: 600px;
@@ -33,8 +34,14 @@
     transition: background 0.15s;
     border-left: 3px solid transparent;
 
-    &.hovered {
+    &:hover {
       background: var(--bg-tertiary);
+    }
+
+    &.cursor {
+      background: var(--bg-tertiary);
+      outline: 2px solid var(--link-color);
+      outline-offset: -2px;
     }
 
     &.selected {
@@ -42,7 +49,8 @@
       border-left-color: var(--link-color);
     }
 
-    &.hovered.selected {
+    &.cursor.selected,
+    &.selected:hover {
       background: var(--bg-selected);
       filter: brightness(1.1);
     }

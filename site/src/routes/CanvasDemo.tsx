@@ -279,7 +279,7 @@ function Canvas() {
     <div className="canvas-app">
       <h1 id="demo">Canvas Demo</h1>
       <p className="hint">
-        Press <Kbd action="global:0-help" /> for shortcuts. Draw with mouse, use number keys for colors.
+        Press <Kbd action="__hotkeys:modal" /> for shortcuts. Draw with mouse, use number keys for colors.
       </p>
 
       <div className="canvas-toolbar">

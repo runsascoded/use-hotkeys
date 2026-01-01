@@ -466,13 +466,14 @@ function DataTable() {
     }
     setSelectedIds(new Set())
     setHoveredIndex(-1)
+    setRangeAnchor(-1)
   }, [])
 
   return (
     <div className="data-table-app" onClick={handleContainerClick}>
       <h1 id="demo">Data Table Demo</h1>
       <p className="hint">
-        Press <Kbd action="global:0-help" /> for shortcuts.
+        Press <Kbd action="__hotkeys:modal" /> for shortcuts.
         {selectedIds.size > 1 && <strong> ({selectedIds.size} selected)</strong>}
       </p>
 
@@ -484,15 +485,14 @@ function DataTable() {
             <th>Value{getSortIndicator('value')}</th>
           </tr>
         </thead>
-        <tbody onMouseLeave={() => setHoveredIndex(-1)}>
+        <tbody>
           {paginatedData.map((row, index) => {
-            const isHovered = index === hoveredIndex
+            const isCursor = index === hoveredIndex
             const isSelected = selectedIds.has(row.id)
             return (
               <tr
                 key={row.id}
-                className={`${isHovered ? 'hovered' : ''} ${isSelected ? 'selected' : ''}`}
-                onMouseEnter={() => setHoveredIndex(index)}
+                className={`${isCursor ? 'cursor' : ''} ${isSelected ? 'selected' : ''}`}
                 onClick={(e) => {
                   setHoveredIndex(index)
                   if (e.shiftKey) {

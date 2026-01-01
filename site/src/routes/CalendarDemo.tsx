@@ -326,7 +326,7 @@ function Calendar() {
     <div className="calendar-app">
       <h1 id="demo">Calendar Demo</h1>
       <p className="hint">
-        Press <Kbd action="global:0-help" /> for shortcuts.
+        Press <Kbd action="__hotkeys:modal" /> for shortcuts.
       </p>
 
       <div className="calendar-header">
