@@ -1,8 +1,10 @@
 import { Kbd, ShortcutsModal } from 'use-kbd'
 import { A } from '../components/A'
+import { CodeBlock } from '../components/CodeBlock'
 import { DemoThumbnail } from '../components/DemoThumbnail'
 import { DemoTitle } from '../components/DemoTitle'
 import { Command, Ctrl, Option, Shift } from '../components/ModifierIconsWithTooltips'
+import { quickStartCode } from './quickStartCode'
 
 # use-kbd
 
@@ -10,7 +12,7 @@ import { Command, Ctrl, Option, Shift } from '../components/ModifierIconsWithToo
 
 Add keyboard shortcuts, navigation, omnibar to React apps:
 
-1. **Drop-in UI components** ([`ShortcutsModal`], [`Omnibar`], [`SequenceModal`]) at the App level
+1. **Drop-in UI components:** [`ShortcutsModal`], [`Omnibar`], [`SequenceModal`]
 2. **Minimal-boilerplate action registration** via [`useAction`] hook, colocated with handlers
 3. **CSS variables** for easy theming customization
 
@@ -59,34 +61,7 @@ Add keyboard shortcuts, navigation, omnibar to React apps:
 
 ## Quick Start
 
-```tsx
-import { HotkeysProvider, ShortcutsModal, Omnibar, SequenceModal, useAction } from 'use-kbd'
-import 'use-kbd/styles.css'
-
-function App() {
-  return (
-    <HotkeysProvider>
-      <Dashboard />
-      <ShortcutsModal />
-      <Omnibar />
-      <SequenceModal />
-    </HotkeysProvider>
-  )
-}
-
-function Dashboard() {
-  const { save } = useDocument()
-
-  useAction('doc:save', {
-    label: 'Save document',
-    group: 'Document',
-    defaultBindings: ['meta+s'],
-    handler: save,
-  })
-
-  return <Editor />
-}
-```
+<CodeBlock highlightLines="1-2,6,8-11,18-23" code={quickStartCode} />
 
 ## Features
 

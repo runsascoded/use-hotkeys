@@ -24,13 +24,67 @@
     border-top: 1px solid var(--border-primary);
   }
 
-  pre {
+  // Code blocks with syntax highlighting (Shiki)
+  .code-block,
+  .code-block-loading {
+    margin: 1rem 0;
+
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-primary);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-size: 0.85em;
+      line-height: 1.6;
+      margin: 0;
+
+      code {
+        background: transparent;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        width: fit-content;
+        min-width: 100%;
+      }
+
+      // Shiki line styling
+      .line {
+        padding: 0 1rem;
+        margin: 0 -1rem;
+        border-left: 3px solid transparent;
+        min-height: 1lh; // Ensure empty lines have height
+      }
+
+      // Highlighted lines (green, for important code)
+      .line.highlighted,
+      .line.diff.add {
+        background: rgba(46, 160, 67, 0.15);
+        border-left-color: #2ea043;
+      }
+
+      // Diff deletion lines (red)
+      .line.diff.remove {
+        background: rgba(248, 81, 73, 0.15);
+        border-left-color: #f85149;
+      }
+    }
+  }
+
+  // Fallback for plain pre blocks
+  pre:not(.shiki) {
     background: var(--bg-secondary);
     border: 1px solid var(--border-primary);
     border-radius: 6px;
     padding: 1rem;
     overflow-x: auto;
     font-size: 0.9em;
+
+    code {
+      background: transparent;
+      padding: 0;
+    }
   }
 
   code {
