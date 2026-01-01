@@ -277,6 +277,13 @@ export function HotkeysProvider({
     sequenceTimeout: config.sequenceTimeout,
   })
 
+  // Close modal when a sequence starts (so SequenceModal can show)
+  useEffect(() => {
+    if (isAwaitingSequence && isModalOpen) {
+      closeModal()
+    }
+  }, [isAwaitingSequence, isModalOpen, closeModal])
+
   // Search helper
   const searchActionsHelper = useCallback(
     (query: string) => searchActions(query, registry.actionRegistry, keymap),

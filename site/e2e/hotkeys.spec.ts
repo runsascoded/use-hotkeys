@@ -19,7 +19,7 @@ test.describe('Global Features', () => {
     await expect(modal).toBeVisible()
   })
 
-  test('shortcuts work while modal is open (but not editing)', async ({ page }) => {
+  test('shortcuts work while modal is open, modal closes on sequence', async ({ page }) => {
     await page.locator('body').click({ position: { x: 10, y: 10 } })
 
     // Open modal
@@ -30,12 +30,15 @@ test.describe('Global Features', () => {
     // Navigate to table with g t sequence while modal is open
     await page.keyboard.press('g')
     await page.waitForTimeout(100)
+
+    // Modal should close when sequence starts (so SequenceModal can show)
+    await expect(page.locator('.kbd-modal')).not.toBeVisible()
+
     await page.keyboard.press('t')
     await page.waitForTimeout(500)
 
-    // Should navigate to table (modal stays open)
+    // Should navigate to table
     await expect(page).toHaveURL('/table')
-    await expect(page.locator('.kbd-modal')).toBeVisible()
   })
 
   test('can open and close omnibar with Cmd+K', async ({ page }) => {

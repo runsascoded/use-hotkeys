@@ -89,7 +89,14 @@ function GlobalActions() {
     handler: () => ctx.openOmnibar(),
   })
 
-  useAction('global:2-theme', {
+  useAction('global:2-lookup', {
+    label: 'Key lookup',
+    group: 'Global',
+    defaultBindings: ['meta+shift+k'],
+    handler: () => ctx.openLookup(),
+  })
+
+  useAction('global:3-theme', {
     label: 'Cycle theme',
     group: 'Global',
     defaultBindings: ['T'],

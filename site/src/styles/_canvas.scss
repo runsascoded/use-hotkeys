@@ -1,6 +1,23 @@
 // Canvas Demo styles
 // Demonstrates: tool selection, color/brush size shortcuts, undo/redo
 
+// Narrower modal with more padding for simple shortcut lists
+.route-canvas {
+  .kbd-modal {
+    max-width: 400px;
+  }
+
+  .kbd-action {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .kbd-group-title {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
 .canvas-app {
   max-width: 900px;
 }

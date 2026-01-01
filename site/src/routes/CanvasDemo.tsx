@@ -232,8 +232,8 @@ function Canvas() {
     }, []),
   })
 
-  // Edit actions
-  useAction('edit:undo', {
+  // Edit actions (prefixed for sort order: undo, redo, clear)
+  useAction('edit:0-undo', {
     label: 'Undo',
     group: 'Edit',
     defaultBindings: ['z'],
@@ -247,7 +247,7 @@ function Canvas() {
     }, [history, strokes]),
   })
 
-  useAction('edit:redo', {
+  useAction('edit:1-redo', {
     label: 'Redo',
     group: 'Edit',
     defaultBindings: ['shift+z'],
@@ -261,7 +261,7 @@ function Canvas() {
     }, [redoStack, strokes]),
   })
 
-  useAction('edit:clear', {
+  useAction('edit:2-clear', {
     label: 'Clear canvas',
     group: 'Edit',
     defaultBindings: ['meta+backspace'],
