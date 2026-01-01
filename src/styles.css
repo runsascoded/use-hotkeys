@@ -86,12 +86,34 @@
   font-weight: 600;
 }
 
+.kbd-modal-header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kbd-reset-btn {
+  background: none;
+  border: 1px solid var(--kbd-border);
+  border-radius: var(--kbd-radius-sm);
+  padding: 4px 10px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: var(--kbd-text-secondary);
+  transition: all var(--kbd-transition);
+}
+
+.kbd-reset-btn:hover {
+  color: var(--kbd-text);
+  border-color: var(--kbd-text-secondary);
+}
+
 .kbd-modal-close {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   cursor: pointer;
-  padding: 4px;
+  padding: 4px 8px;
   line-height: 1;
   color: var(--kbd-text-secondary);
   transition: color var(--kbd-transition);
