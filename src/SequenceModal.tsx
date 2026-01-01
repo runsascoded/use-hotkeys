@@ -3,6 +3,30 @@ import { useHotkeysContext } from './HotkeysProvider'
 import type { SequenceCompletion } from './types'
 import { formatCombination } from './utils'
 
+/**
+ * Modal that appears during multi-key sequence input (e.g., `g t` for "go to table").
+ *
+ * When a user presses a key that starts a sequence, this modal appears showing:
+ * - The keys pressed so far
+ * - Available completions (what keys can come next)
+ * - A timeout indicator
+ *
+ * Unlike LookupModal (which requires explicit activation and lets you browse/search),
+ * SequenceModal appears automatically when you start typing a sequence and auto-executes
+ * when a complete sequence is entered.
+ *
+ * The modal auto-dismisses if no completion is pressed within the sequence timeout,
+ * or when the user presses Escape, or when a complete sequence is executed.
+ *
+ * @example
+ * ```tsx
+ * // Include in your app (no props needed - uses HotkeysContext)
+ * <HotkeysProvider>
+ *   <App />
+ *   <SequenceModal />
+ * </HotkeysProvider>
+ * ```
+ */
 export function SequenceModal() {
   const {
     pendingKeys,

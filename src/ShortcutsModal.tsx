@@ -392,20 +392,31 @@ function BindingDisplay({
 }
 
 /**
- * Modal component for displaying and optionally editing keyboard shortcuts.
+ * Modal for displaying all keyboard shortcuts, organized by group.
  *
- * Uses CSS classes from styles.css. Override via CSS custom properties:
- * --kbd-bg, --kbd-text, --kbd-kbd-bg, etc.
+ * Opens by default with `?` key. Shows all registered actions and their bindings,
+ * grouped by category (e.g., "Navigation", "Edit", "Global").
+ *
+ * Features:
+ * - **Editable bindings**: Click any shortcut to rebind it (when `editable` is true)
+ * - **Conflict detection**: Warns when a binding conflicts with existing shortcuts
+ * - **Custom group renderers**: Use `groupRenderers` for custom layouts (e.g., two-column for fwd/back pairs)
+ * - **Persistence**: Integrates with HotkeysProvider's localStorage persistence
+ *
+ * Unlike Omnibar (search-first) or LookupModal (type keys to filter), ShortcutsModal
+ * shows everything at once in a browsable, organized view.
+ *
+ * Styled via CSS custom properties: --kbd-bg, --kbd-text, --kbd-kbd-bg, etc.
  *
  * @example
  * ```tsx
- * // Read-only display
- * <ShortcutsModal
- *   keymap={HOTKEYS}
- *   labels={{ 'metric:temp': 'Temperature' }}
- * />
+ * // Basic usage with HotkeysProvider (recommended)
+ * <HotkeysProvider>
+ *   <App />
+ *   <ShortcutsModal editable />
+ * </HotkeysProvider>
  *
- * // Editable with callbacks
+ * // Standalone with explicit props
  * <ShortcutsModal
  *   keymap={keymap}
  *   defaults={DEFAULT_KEYMAP}

@@ -96,13 +96,31 @@ function BindingBadge({ binding }: { binding: string }) {
 }
 
 /**
- * Omnibar/command palette component for searching and executing actions.
+ * Command palette for searching and executing actions by name.
  *
- * Uses CSS classes from styles.css. Override via CSS custom properties:
- * --kbd-bg, --kbd-text, --kbd-accent, etc.
+ * Opens by default with `⌘K` (macOS) or `Ctrl+K` (Windows/Linux). Type to search
+ * across all registered actions by label, then press Enter to execute.
+ *
+ * Features:
+ * - **Fuzzy search**: Matches action labels (e.g., "nav tab" finds "Navigate to Table")
+ * - **Keyboard navigation**: Arrow keys to select, Enter to execute, Escape to close
+ * - **Binding display**: Shows keyboard shortcuts next to each result
+ * - **Sequence support**: Can also match and execute key sequences
+ *
+ * Unlike ShortcutsModal (shows all shortcuts organized by group) or LookupModal
+ * (type keys to filter by binding), Omnibar is search-first by action name/label.
+ *
+ * Styled via CSS custom properties: --kbd-bg, --kbd-text, --kbd-accent, etc.
  *
  * @example
  * ```tsx
+ * // Basic usage with HotkeysProvider (recommended)
+ * <HotkeysProvider>
+ *   <App />
+ *   <Omnibar />
+ * </HotkeysProvider>
+ *
+ * // Standalone with explicit props
  * <Omnibar
  *   actions={ACTIONS}
  *   handlers={HANDLERS}
