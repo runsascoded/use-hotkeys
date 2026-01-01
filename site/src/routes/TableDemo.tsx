@@ -55,6 +55,7 @@ function DataTable() {
   const [pinnedIds, setPinnedIds] = useState<Set<number>>(new Set())
   const [mouseHoverIndex, setMouseHoverIndex] = useState<number>(-1)
   const containerRef = useRef<HTMLDivElement>(null)
+  const tableRef = useRef<HTMLTableElement>(null)
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
   const [currentPage, setCurrentPage] = useState(1)
@@ -70,9 +71,10 @@ function DataTable() {
   useEffect(() => {
     const handleDocumentClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement
-      // Don't deselect if clicking inside table container, modals, or omnibar
+      // Don't deselect if clicking inside the table, pagination, modals, or omnibar
       if (
-        containerRef.current?.contains(target) ||
+        tableRef.current?.contains(target) ||
+        target.closest('.pagination-controls') ||
         target.closest('.kbd-modal') ||
         target.closest('.kbd-backdrop') ||
         target.closest('.kbd-omnibar')
@@ -506,7 +508,7 @@ function DataTable() {
         {selectedIds.size > 1 && <strong> ({selectedIds.size} selected)</strong>}
       </p>
 
-      <table className="data-table">
+      <table className="data-table" ref={tableRef}>
         <thead>
           <tr>
             <th>Name{getSortIndicator('name')}</th>

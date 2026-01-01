@@ -156,10 +156,9 @@ test.describe('Data Table Demo', () => {
   })
 
   test('keyboard navigation works with j/k', async ({ page }) => {
-    // Click inside table container to focus (not outside, which would deselect)
-    await page.locator('.data-table-app h1').click()
-
+    // Click first row to select it and focus the table
     const rows = page.locator('.data-table tbody tr')
+    await rows.first().click()
     await expect(rows.first()).toHaveClass(/selected/)
 
     // Press j to move down
