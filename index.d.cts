@@ -523,20 +523,31 @@ interface ShortcutsModalRenderProps {
     reset: () => void;
 }
 /**
- * Modal component for displaying and optionally editing keyboard shortcuts.
+ * Modal for displaying all keyboard shortcuts, organized by group.
  *
- * Uses CSS classes from styles.css. Override via CSS custom properties:
- * --kbd-bg, --kbd-text, --kbd-kbd-bg, etc.
+ * Opens by default with `?` key. Shows all registered actions and their bindings,
+ * grouped by category (e.g., "Navigation", "Edit", "Global").
+ *
+ * Features:
+ * - **Editable bindings**: Click any shortcut to rebind it (when `editable` is true)
+ * - **Conflict detection**: Warns when a binding conflicts with existing shortcuts
+ * - **Custom group renderers**: Use `groupRenderers` for custom layouts (e.g., two-column for fwd/back pairs)
+ * - **Persistence**: Integrates with HotkeysProvider's localStorage persistence
+ *
+ * Unlike Omnibar (search-first) or LookupModal (type keys to filter), ShortcutsModal
+ * shows everything at once in a browsable, organized view.
+ *
+ * Styled via CSS custom properties: --kbd-bg, --kbd-text, --kbd-kbd-bg, etc.
  *
  * @example
  * ```tsx
- * // Read-only display
- * <ShortcutsModal
- *   keymap={HOTKEYS}
- *   labels={{ 'metric:temp': 'Temperature' }}
- * />
+ * // Basic usage with HotkeysProvider (recommended)
+ * <HotkeysProvider>
+ *   <App />
+ *   <ShortcutsModal editable />
+ * </HotkeysProvider>
  *
- * // Editable with callbacks
+ * // Standalone with explicit props
  * <ShortcutsModal
  *   keymap={keymap}
  *   defaults={DEFAULT_KEYMAP}
@@ -666,13 +677,31 @@ interface OmnibarRenderProps {
     inputRef: RefObject<HTMLInputElement | null>;
 }
 /**
- * Omnibar/command palette component for searching and executing actions.
+ * Command palette for searching and executing actions by name.
  *
- * Uses CSS classes from styles.css. Override via CSS custom properties:
- * --kbd-bg, --kbd-text, --kbd-accent, etc.
+ * Opens by default with `⌘K` (macOS) or `Ctrl+K` (Windows/Linux). Type to search
+ * across all registered actions by label, then press Enter to execute.
+ *
+ * Features:
+ * - **Fuzzy search**: Matches action labels (e.g., "nav tab" finds "Navigate to Table")
+ * - **Keyboard navigation**: Arrow keys to select, Enter to execute, Escape to close
+ * - **Binding display**: Shows keyboard shortcuts next to each result
+ * - **Sequence support**: Can also match and execute key sequences
+ *
+ * Unlike ShortcutsModal (shows all shortcuts organized by group) or LookupModal
+ * (type keys to filter by binding), Omnibar is search-first by action name/label.
+ *
+ * Styled via CSS custom properties: --kbd-bg, --kbd-text, --kbd-accent, etc.
  *
  * @example
  * ```tsx
+ * // Basic usage with HotkeysProvider (recommended)
+ * <HotkeysProvider>
+ *   <App />
+ *   <Omnibar />
+ * </HotkeysProvider>
+ *
+ * // Standalone with explicit props
  * <Omnibar
  *   actions={ACTIONS}
  *   handlers={HANDLERS}
@@ -1129,6 +1158,30 @@ interface LookupModalProps {
  */
 declare function LookupModal({ defaultBinding }?: LookupModalProps): react_jsx_runtime.JSX.Element | null;
 
+/**
+ * Modal that appears during multi-key sequence input (e.g., `g t` for "go to table").
+ *
+ * When a user presses a key that starts a sequence, this modal appears showing:
+ * - The keys pressed so far
+ * - Available completions (what keys can come next)
+ * - A timeout indicator
+ *
+ * Unlike LookupModal (which requires explicit activation and lets you browse/search),
+ * SequenceModal appears automatically when you start typing a sequence and auto-executes
+ * when a complete sequence is entered.
+ *
+ * The modal auto-dismisses if no completion is pressed within the sequence timeout,
+ * or when the user presses Escape, or when a complete sequence is executed.
+ *
+ * @example
+ * ```tsx
+ * // Include in your app (no props needed - uses HotkeysContext)
+ * <HotkeysProvider>
+ *   <App />
+ *   <SequenceModal />
+ * </HotkeysProvider>
+ * ```
+ */
 declare function SequenceModal(): react_jsx_runtime.JSX.Element | null;
 
 interface ModifierIconProps extends SVGProps<SVGSVGElement> {
