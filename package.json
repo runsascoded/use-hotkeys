@@ -58,9 +58,10 @@
     "vitest": "^2.1.8"
   },
   "peerDependencies": {
-    "react": ">=18.0.0"
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
   },
   "dependencies": {
-    "@rdub/base": "^0.8.1"
+    "@rdub/base": "https://gitlab.com/runsascoded/js/base/-/archive/d25db27a5640bdbb1e451955194694b62d5bcf39/base-d25db27a5640bdbb1e451955194694b62d5bcf39.tar.gz"
   }
 }

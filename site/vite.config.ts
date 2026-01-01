@@ -8,6 +8,9 @@ export default defineConfig({
     { enforce: 'pre', ...mdx() },
     react({ include: /\.(jsx|js|mdx|md|tsx|ts)$/ }),
   ],
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
   build: {
     outDir: '../docs',
     emptyOutDir: true,
