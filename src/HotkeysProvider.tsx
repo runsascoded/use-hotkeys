@@ -30,6 +30,9 @@ export interface HotkeysConfig {
 
   /** Key sequence to open omnibar (false to disable) */
   omnibarTrigger?: string | false
+
+  /** Key sequence to open lookup modal (false to disable) */
+  lookupTrigger?: string | false
 }
 
 /**
@@ -60,6 +63,14 @@ export interface HotkeysContextValue {
   isEditingBinding: boolean
   /** Set editing state (called by ShortcutsModal) */
   setIsEditingBinding: (value: boolean) => void
+  /** Lookup modal open state */
+  isLookupOpen: boolean
+  /** Open the lookup modal */
+  openLookup: () => void
+  /** Close the lookup modal */
+  closeLookup: () => void
+  /** Toggle the lookup modal */
+  toggleLookup: () => void
   /** Execute an action by ID */
   executeAction: (id: string) => void
   /** Sequence state: pending key combinations */
@@ -92,6 +103,7 @@ const DEFAULT_CONFIG: Required<HotkeysConfig> = {
   enableOnTouch: false,
   modalTrigger: '?',
   omnibarTrigger: 'meta+k',
+  lookupTrigger: 'meta+shift+k',
 }
 
 export interface HotkeysProviderProps {
@@ -192,6 +204,12 @@ export function HotkeysProvider({
   const closeOmnibar = useCallback(() => setIsOmnibarOpen(false), [])
   const toggleOmnibar = useCallback(() => setIsOmnibarOpen(prev => !prev), [])
 
+  // Lookup modal state
+  const [isLookupOpen, setIsLookupOpen] = useState(false)
+  const openLookup = useCallback(() => setIsLookupOpen(true), [])
+  const closeLookup = useCallback(() => setIsLookupOpen(false), [])
+  const toggleLookup = useCallback(() => setIsLookupOpen(prev => !prev), [])
+
   // Editing binding state (set by ShortcutsModal when recording a new binding)
   const [isEditingBinding, setIsEditingBinding] = useState(false)
 
@@ -205,9 +223,12 @@ export function HotkeysProvider({
     if (config.omnibarTrigger !== false) {
       map[config.omnibarTrigger] = '__hotkeys:omnibar'
     }
+    if (config.lookupTrigger !== false) {
+      map[config.lookupTrigger] = '__hotkeys:lookup'
+    }
 
     return map
-  }, [registry.keymap, config.modalTrigger, config.omnibarTrigger])
+  }, [registry.keymap, config.modalTrigger, config.omnibarTrigger, config.lookupTrigger])
 
   // Compute conflicts
   const conflicts = useMemo(() => findConflicts(keymap), [keymap])
@@ -238,12 +259,13 @@ export function HotkeysProvider({
     // Built-in triggers
     map['__hotkeys:modal'] = toggleModal
     map['__hotkeys:omnibar'] = toggleOmnibar
+    map['__hotkeys:lookup'] = toggleLookup
 
     return map
-  }, [registry.actions, toggleModal, toggleOmnibar])
+  }, [registry.actions, toggleModal, toggleOmnibar, toggleLookup])
 
-  // Register hotkeys (enabled unless editing a binding or omnibar is open)
-  const hotkeysEnabled = isEnabled && !isEditingBinding && !isOmnibarOpen
+  // Register hotkeys (enabled unless editing a binding, omnibar, or lookup is open)
+  const hotkeysEnabled = isEnabled && !isEditingBinding && !isOmnibarOpen && !isLookupOpen
   const {
     pendingKeys,
     isAwaitingSequence,
@@ -278,6 +300,10 @@ export function HotkeysProvider({
     openOmnibar,
     closeOmnibar,
     toggleOmnibar,
+    isLookupOpen,
+    openLookup,
+    closeLookup,
+    toggleLookup,
     isEditingBinding,
     setIsEditingBinding,
     executeAction: registry.execute,
@@ -301,6 +327,10 @@ export function HotkeysProvider({
     openOmnibar,
     closeOmnibar,
     toggleOmnibar,
+    isLookupOpen,
+    openLookup,
+    closeLookup,
+    toggleLookup,
     isEditingBinding,
     pendingKeys,
     isAwaitingSequence,

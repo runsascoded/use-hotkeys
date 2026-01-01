@@ -1,6 +1,7 @@
 import { Route, Routes, useLocation } from 'react-router-dom'
 import {
   HotkeysProvider,
+  LookupModal,
   Omnibar,
   SequenceModal,
   useAction,
@@ -117,6 +118,7 @@ function AppContent() {
       </main>
       <Omnibar />
       <SequenceModal />
+      <LookupModal />
       <FloatingControls />
     </div>
   )
