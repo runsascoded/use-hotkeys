@@ -273,6 +273,9 @@ function useActionsRegistry(options = {}) {
 
 // src/constants.ts
 var DEFAULT_SEQUENCE_TIMEOUT = 1e3;
+var ACTION_MODAL = "__hotkeys:modal";
+var ACTION_OMNIBAR = "__hotkeys:omnibar";
+var ACTION_LOOKUP = "__hotkeys:lookup";
 
 // src/utils.ts
 var { max } = Math;
@@ -1896,14 +1899,14 @@ function BindingDisplay({ binding }) {
 function Kbd({
   action,
   separator = " / ",
-  first = false,
+  all = false,
   fallback = null,
   className,
   clickable = true
 }) {
   const ctx = useMaybeHotkeysContext();
   const warnedRef = useRef(false);
-  const bindings = ctx ? first ? [ctx.registry.getFirstBindingForAction(action)].filter(Boolean) : ctx.registry.getBindingsForAction(action) : [];
+  const bindings = ctx ? all ? ctx.registry.getBindingsForAction(action) : [ctx.registry.getFirstBindingForAction(action)].filter(Boolean) : [];
   useEffect(() => {
     if (!ctx) return;
     if (warnedRef.current) return;
@@ -1947,6 +1950,18 @@ function Kbd({
 }
 function Key(props) {
   return /* @__PURE__ */ jsx(Kbd, { ...props, clickable: false });
+}
+function Kbds(props) {
+  return /* @__PURE__ */ jsx(Kbd, { ...props, all: true });
+}
+function KbdModal(props) {
+  return /* @__PURE__ */ jsx(Kbd, { ...props, action: ACTION_MODAL });
+}
+function KbdOmnibar(props) {
+  return /* @__PURE__ */ jsx(Kbd, { ...props, action: ACTION_OMNIBAR });
+}
+function KbdLookup(props) {
+  return /* @__PURE__ */ jsx(Kbd, { ...props, action: ACTION_LOOKUP });
 }
 function buildActionMap(keymap) {
   const map = /* @__PURE__ */ new Map();
@@ -2143,7 +2158,7 @@ function LookupModal({ defaultBinding = "meta+shift+k" } = {}) {
     registry,
     executeAction
   } = useHotkeysContext();
-  useAction("__hotkeys:lookup", {
+  useAction(ACTION_LOOKUP, {
     label: "Key lookup",
     group: "Global",
     defaultBindings: defaultBinding ? [defaultBinding] : [],
@@ -2334,7 +2349,7 @@ function Omnibar({
   const ctx = useMaybeHotkeysContext();
   const actions = actionsProp ?? ctx?.registry.actionRegistry ?? {};
   const keymap = keymapProp ?? ctx?.registry.keymap ?? {};
-  useAction("__hotkeys:omnibar", {
+  useAction(ACTION_OMNIBAR, {
     label: "Command palette",
     group: "Global",
     defaultBindings: defaultBinding ? [defaultBinding] : [],
@@ -2836,7 +2851,7 @@ function ShortcutsModal({
       setInternalIsOpen(true);
     }
   }, [ctx]);
-  useAction("__hotkeys:modal", {
+  useAction(ACTION_MODAL, {
     label: "Show shortcuts",
     group: "Global",
     defaultBindings: defaultBinding ? [defaultBinding] : [],
@@ -3284,6 +3299,6 @@ function ShortcutsModal({
   ] }) });
 }
 
-export { ActionsRegistryContext, Alt, Backspace, Command, Ctrl, DEFAULT_SEQUENCE_TIMEOUT, Down, Enter, HotkeysProvider, Kbd, Key, KeybindingEditor, Left, LookupModal, ModifierIcon, Omnibar, Option, Right, SequenceModal, Shift, ShortcutsModal, Up, createTwoColumnRenderer, findConflicts, formatBinding, formatCombination, formatKeyForDisplay, fuzzyMatch, getActionBindings, getConflictsArray, getKeyIcon, getModifierIcon, getSequenceCompletions, hasConflicts, isMac, isModifierKey, isSequence, normalizeKey, parseCombinationId, parseHotkeyString, searchActions, useAction, useActions, useActionsRegistry, useEditableHotkeys, useHotkeys, useHotkeysContext, useMaybeHotkeysContext, useOmnibar, useRecordHotkey };
+export { ACTION_LOOKUP, ACTION_MODAL, ACTION_OMNIBAR, ActionsRegistryContext, Alt, Backspace, Command, Ctrl, DEFAULT_SEQUENCE_TIMEOUT, Down, Enter, HotkeysProvider, Kbd, KbdLookup, KbdModal, KbdOmnibar, Kbds, Key, KeybindingEditor, Left, LookupModal, ModifierIcon, Omnibar, Option, Right, SequenceModal, Shift, ShortcutsModal, Up, createTwoColumnRenderer, findConflicts, formatBinding, formatCombination, formatKeyForDisplay, fuzzyMatch, getActionBindings, getConflictsArray, getKeyIcon, getModifierIcon, getSequenceCompletions, hasConflicts, isMac, isModifierKey, isSequence, normalizeKey, parseCombinationId, parseHotkeyString, searchActions, useAction, useActions, useActionsRegistry, useEditableHotkeys, useHotkeys, useHotkeysContext, useMaybeHotkeysContext, useOmnibar, useRecordHotkey };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

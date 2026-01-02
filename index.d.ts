@@ -1096,8 +1096,8 @@ interface KbdProps {
     action: string;
     /** Separator between multiple bindings (default: " / ") */
     separator?: string;
-    /** Only show the first binding */
-    first?: boolean;
+    /** Show all bindings instead of just the first (default: false, shows only first) */
+    all?: boolean;
     /** Fallback content when no bindings exist */
     fallback?: React.ReactNode;
     /** Additional className */
@@ -1119,22 +1119,45 @@ interface KbdProps {
  * // Non-clickable for pure display (use Key alias or clickable={false})
  * <p>Navigate with <Key action="next" /> to go to next item</p>
  *
- * // Show only the first binding
- * <p>Press <Kbd action="next" first /> to go to next item</p>
- *
- * // Custom separator for multiple bindings
- * <p>Navigate with <Key action="next" separator=" or " /></p>
+ * // Show all bindings (not just the first)
+ * <p>Navigate with <Kbd action="next" all separator=" or " /></p>
  *
  * // With fallback when no binding exists
  * <Kbd action="customAction" fallback="(unbound)" />
  * ```
  */
-declare function Kbd({ action, separator, first, fallback, className, clickable, }: KbdProps): react_jsx_runtime.JSX.Element | null;
+declare function Kbd({ action, separator, all, fallback, className, clickable, }: KbdProps): react_jsx_runtime.JSX.Element | null;
 /**
  * Non-clickable variant of Kbd for pure display/documentation purposes.
  * Alias for `<Kbd clickable={false} ... />`
  */
 declare function Key(props: Omit<KbdProps, 'clickable'>): react_jsx_runtime.JSX.Element;
+/**
+ * Display all bindings for an action (shows multiple if they exist).
+ * Alias for `<Kbd all ... />`
+ *
+ * @example
+ * ```tsx
+ * <p>Navigate with <Kbds action="next" separator=" or " /></p>
+ * ```
+ */
+declare function Kbds(props: Omit<KbdProps, 'all'>): react_jsx_runtime.JSX.Element;
+type BuiltinKbdProps = Omit<KbdProps, 'action'>;
+/**
+ * Kbd for the ShortcutsModal trigger (default: `?`).
+ * @example <KbdModal /> // Shows "?" or user's custom binding
+ */
+declare function KbdModal(props: BuiltinKbdProps): react_jsx_runtime.JSX.Element;
+/**
+ * Kbd for the Omnibar trigger (default: `⌘K`).
+ * @example <KbdOmnibar /> // Shows "⌘K" or user's custom binding
+ */
+declare function KbdOmnibar(props: BuiltinKbdProps): react_jsx_runtime.JSX.Element;
+/**
+ * Kbd for the LookupModal trigger (default: `⌘⇧K`).
+ * @example <KbdLookup /> // Shows "⌘⇧K" or user's custom binding
+ */
+declare function KbdLookup(props: BuiltinKbdProps): react_jsx_runtime.JSX.Element;
 
 interface LookupModalProps {
     /**
@@ -1231,5 +1254,12 @@ declare function getKeyIcon(key: string): React.ComponentType<KeyIconProps> | nu
  * Used when no explicit `sequenceTimeout` is provided.
  */
 declare const DEFAULT_SEQUENCE_TIMEOUT = 1000;
+/**
+ * Reserved action IDs for built-in UI components.
+ * These are registered automatically by their respective components.
+ */
+declare const ACTION_MODAL = "__hotkeys:modal";
+declare const ACTION_OMNIBAR = "__hotkeys:omnibar";
+declare const ACTION_LOOKUP = "__hotkeys:lookup";
 
-export { type ActionConfig, type ActionDefinition, type ActionRegistry, type ActionSearchResult, ActionsRegistryContext, type ActionsRegistryValue, Alt, Backspace, type BindingInfo, Command, Ctrl, DEFAULT_SEQUENCE_TIMEOUT, Down, Enter, type FuzzyMatchResult, type GroupRenderer, type GroupRendererProps, type HandlerMap, type HotkeyMap, type HotkeySequence, type HotkeysConfig, type HotkeysContextValue, HotkeysProvider, type HotkeysProviderProps, Kbd, type KbdProps, Key, type KeyCombination, type KeyCombinationDisplay, type KeyConflict, type KeyIconProps, type KeyIconType, KeybindingEditor, type KeybindingEditorProps, type KeybindingEditorRenderProps, Left, LookupModal, ModifierIcon, type ModifierIconProps, type ModifierType, Omnibar, type OmnibarProps, type OmnibarRenderProps, Option, type RecordHotkeyOptions, type RecordHotkeyResult, type RegisteredAction, Right, type SequenceCompletion, SequenceModal, Shift, type ShortcutGroup, ShortcutsModal, type ShortcutsModalProps, type ShortcutsModalRenderProps, type TwoColumnConfig, type TwoColumnRow, Up, type UseEditableHotkeysOptions, type UseEditableHotkeysResult, type UseHotkeysOptions, type UseHotkeysResult, type UseOmnibarOptions, type UseOmnibarResult, createTwoColumnRenderer, findConflicts, formatBinding, formatCombination, formatKeyForDisplay, fuzzyMatch, getActionBindings, getConflictsArray, getKeyIcon, getModifierIcon, getSequenceCompletions, hasConflicts, isMac, isModifierKey, isSequence, normalizeKey, parseCombinationId, parseHotkeyString, searchActions, useAction, useActions, useActionsRegistry, useEditableHotkeys, useHotkeys, useHotkeysContext, useMaybeHotkeysContext, useOmnibar, useRecordHotkey };
+export { ACTION_LOOKUP, ACTION_MODAL, ACTION_OMNIBAR, type ActionConfig, type ActionDefinition, type ActionRegistry, type ActionSearchResult, ActionsRegistryContext, type ActionsRegistryValue, Alt, Backspace, type BindingInfo, Command, Ctrl, DEFAULT_SEQUENCE_TIMEOUT, Down, Enter, type FuzzyMatchResult, type GroupRenderer, type GroupRendererProps, type HandlerMap, type HotkeyMap, type HotkeySequence, type HotkeysConfig, type HotkeysContextValue, HotkeysProvider, type HotkeysProviderProps, Kbd, KbdLookup, KbdModal, KbdOmnibar, type KbdProps, Kbds, Key, type KeyCombination, type KeyCombinationDisplay, type KeyConflict, type KeyIconProps, type KeyIconType, KeybindingEditor, type KeybindingEditorProps, type KeybindingEditorRenderProps, Left, LookupModal, ModifierIcon, type ModifierIconProps, type ModifierType, Omnibar, type OmnibarProps, type OmnibarRenderProps, Option, type RecordHotkeyOptions, type RecordHotkeyResult, type RegisteredAction, Right, type SequenceCompletion, SequenceModal, Shift, type ShortcutGroup, ShortcutsModal, type ShortcutsModalProps, type ShortcutsModalRenderProps, type TwoColumnConfig, type TwoColumnRow, Up, type UseEditableHotkeysOptions, type UseEditableHotkeysResult, type UseHotkeysOptions, type UseHotkeysResult, type UseOmnibarOptions, type UseOmnibarResult, createTwoColumnRenderer, findConflicts, formatBinding, formatCombination, formatKeyForDisplay, fuzzyMatch, getActionBindings, getConflictsArray, getKeyIcon, getModifierIcon, getSequenceCompletions, hasConflicts, isMac, isModifierKey, isSequence, normalizeKey, parseCombinationId, parseHotkeyString, searchActions, useAction, useActions, useActionsRegistry, useEditableHotkeys, useHotkeys, useHotkeysContext, useMaybeHotkeysContext, useOmnibar, useRecordHotkey };

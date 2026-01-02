@@ -275,6 +275,9 @@ function useActionsRegistry(options = {}) {
 
 // src/constants.ts
 var DEFAULT_SEQUENCE_TIMEOUT = 1e3;
+var ACTION_MODAL = "__hotkeys:modal";
+var ACTION_OMNIBAR = "__hotkeys:omnibar";
+var ACTION_LOOKUP = "__hotkeys:lookup";
 
 // src/utils.ts
 var { max } = Math;
@@ -1898,14 +1901,14 @@ function BindingDisplay({ binding }) {
 function Kbd({
   action,
   separator = " / ",
-  first = false,
+  all = false,
   fallback = null,
   className,
   clickable = true
 }) {
   const ctx = useMaybeHotkeysContext();
   const warnedRef = react.useRef(false);
-  const bindings = ctx ? first ? [ctx.registry.getFirstBindingForAction(action)].filter(Boolean) : ctx.registry.getBindingsForAction(action) : [];
+  const bindings = ctx ? all ? ctx.registry.getBindingsForAction(action) : [ctx.registry.getFirstBindingForAction(action)].filter(Boolean) : [];
   react.useEffect(() => {
     if (!ctx) return;
     if (warnedRef.current) return;
@@ -1949,6 +1952,18 @@ function Kbd({
 }
 function Key(props) {
   return /* @__PURE__ */ jsxRuntime.jsx(Kbd, { ...props, clickable: false });
+}
+function Kbds(props) {
+  return /* @__PURE__ */ jsxRuntime.jsx(Kbd, { ...props, all: true });
+}
+function KbdModal(props) {
+  return /* @__PURE__ */ jsxRuntime.jsx(Kbd, { ...props, action: ACTION_MODAL });
+}
+function KbdOmnibar(props) {
+  return /* @__PURE__ */ jsxRuntime.jsx(Kbd, { ...props, action: ACTION_OMNIBAR });
+}
+function KbdLookup(props) {
+  return /* @__PURE__ */ jsxRuntime.jsx(Kbd, { ...props, action: ACTION_LOOKUP });
 }
 function buildActionMap(keymap) {
   const map = /* @__PURE__ */ new Map();
@@ -2145,7 +2160,7 @@ function LookupModal({ defaultBinding = "meta+shift+k" } = {}) {
     registry,
     executeAction
   } = useHotkeysContext();
-  useAction("__hotkeys:lookup", {
+  useAction(ACTION_LOOKUP, {
     label: "Key lookup",
     group: "Global",
     defaultBindings: defaultBinding ? [defaultBinding] : [],
@@ -2336,7 +2351,7 @@ function Omnibar({
   const ctx = useMaybeHotkeysContext();
   const actions = actionsProp ?? ctx?.registry.actionRegistry ?? {};
   const keymap = keymapProp ?? ctx?.registry.keymap ?? {};
-  useAction("__hotkeys:omnibar", {
+  useAction(ACTION_OMNIBAR, {
     label: "Command palette",
     group: "Global",
     defaultBindings: defaultBinding ? [defaultBinding] : [],
@@ -2838,7 +2853,7 @@ function ShortcutsModal({
       setInternalIsOpen(true);
     }
   }, [ctx]);
-  useAction("__hotkeys:modal", {
+  useAction(ACTION_MODAL, {
     label: "Show shortcuts",
     group: "Global",
     defaultBindings: defaultBinding ? [defaultBinding] : [],
@@ -3286,6 +3301,9 @@ function ShortcutsModal({
   ] }) });
 }
 
+exports.ACTION_LOOKUP = ACTION_LOOKUP;
+exports.ACTION_MODAL = ACTION_MODAL;
+exports.ACTION_OMNIBAR = ACTION_OMNIBAR;
 exports.ActionsRegistryContext = ActionsRegistryContext;
 exports.Alt = Alt;
 exports.Backspace = Backspace;
@@ -3296,6 +3314,10 @@ exports.Down = Down;
 exports.Enter = Enter;
 exports.HotkeysProvider = HotkeysProvider;
 exports.Kbd = Kbd;
+exports.KbdLookup = KbdLookup;
+exports.KbdModal = KbdModal;
+exports.KbdOmnibar = KbdOmnibar;
+exports.Kbds = Kbds;
 exports.Key = Key;
 exports.KeybindingEditor = KeybindingEditor;
 exports.Left = Left;
