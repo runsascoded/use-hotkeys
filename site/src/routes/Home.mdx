@@ -50,19 +50,20 @@ npm install use-kbd  # or: pnpm add use-kbd
 
 <QuickStartCode />
 
-Basic steps:
+### Basic steps
 
-1. **Drop-in UI components**: <ShortcutsModalLink />, <OmnibarLink />, <LookupModalLink />, <SequenceModalLink />, <ActionLinkLink />
+1. **Drop-in UI components**:
+    - <ShortcutsModalLink />: view/edit key-bindings <KbdModal />
+    - <OmnibarLink />: search and select actions <KbdOmnibar />
+    - <LookupModalLink />: look up actions by key-binding <KbdLookup />
+    - <SequenceModalLink />: autocomplete multi-key sequences
+    - <ActionLinkLink />: register links as actions
 2. **Register functions as "actions"** with <UseActionLink />
 3. **Easy theming** with CSS variables
 
-## Features
-- **Editable Shortcuts** - <KbdModal />, edit shortcuts in modal to rebind
-- **Global Omnibar** - <KbdOmnibar /> Search all actions across pages
-- **Sequences** - Multi-key shortcuts like <Kbd action="link:/table" tooltip="Navigate to Table demo" />
-- **Persisted Bindings** - Custom shortcuts saved to localStorage
-
 ## Demos
+
+Toy apps demonstrating various features of `use-kbd`:
 
 <div className="demos-list">
     <div className="demo-item">
@@ -111,8 +112,8 @@ See this library in action at:
 
 - macOS and GDrive menu search
 - [Superhuman] omnibar
-- Android searchable settings
 - [Vimium] keyboard-driven browsing
+- Android searchable settings
 
 [`site`]: https://github.com/runsascoded/use-kbd/tree/main/site/#readme
 [Superhuman]: https://superhuman.com

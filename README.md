@@ -49,9 +49,14 @@ function Dashboard() {
 }
 ```
 
-Basic steps:
+### Basic steps
 
-1. **Drop-in UI components**: `ShortcutsModal`, `Omnibar`, `LookupModal`, `SequenceModal`
+1. **Drop-in UI components**:
+   - `ShortcutsModal`: view/edit key-bindings
+   - `Omnibar`: search and select actions
+   - `LookupModal`: look up actions by key-binding
+   - `SequenceModal`: autocomplete multi-key sequences
+   - `ActionLink`: register links as actions
 2. **Register functions as "actions"** with `useAction`
 3. **Easy theming** with CSS variables
 
@@ -199,8 +204,8 @@ Wraps `useHotkeys` with localStorage persistence and conflict detection.
 
 - macOS and GDrive menu search
 - [Superhuman] omnibar
-- Android searchable settings
 - [Vimium] keyboard-driven browsing
+- Android searchable settings
 
 [Superhuman]: https://superhuman.com
 [Vimium]: https://github.com/philc/vimium
