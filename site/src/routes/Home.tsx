@@ -1,4 +1,4 @@
-import { mdxComponents } from '../components/CodeBlock'
+import { mdxComponents } from '../components/mdxComponents'
 import HomeMDX from './Home.mdx'
 
 export function Home() {

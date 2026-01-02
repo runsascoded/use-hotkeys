@@ -1,6 +1,6 @@
 import MuiTooltip, { type TooltipProps } from '@mui/material/Tooltip'
 
-export const tooltipProps = {
+const tooltipProps = {
   slotProps: {
     tooltip: { sx: { fontSize: '0.9rem' } },
   },

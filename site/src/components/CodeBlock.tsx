@@ -139,8 +139,3 @@ export function Pre({ children }: { children?: ReactNode }) {
 
   return <CodeBlock code={code} lang={lang} />
 }
-
-/** MDX component overrides for code blocks with copy button */
-export const mdxComponents = {
-  pre: Pre,
-}
